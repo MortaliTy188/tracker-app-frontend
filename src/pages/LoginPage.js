@@ -10,6 +10,8 @@ import {
   Checkbox,
   Link,
   Slide,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 
 export default function LoginPage() {
@@ -17,6 +19,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState(""); // состояние для пароля
   const [name, setName] = useState(""); // состояние для имени (только для регистрации)
   const [isRegister, setIsRegister] = useState(false); // состояние для переключения между регистрацией и входом
+  const [rememberMe, setRememberMe] = useState(false); // состояние для чекбокса "Запомнить меня"
+  const [snackbarOpen, setSnackbarOpen] = useState(false); // состояние для Snackbar
+  const [snackbarMessage, setSnackbarMessage] = useState(""); // сообщение для Snackbar
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success"); // уровень серьезности Snackbar
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -33,9 +39,30 @@ export default function LoginPage() {
           : "http://localhost:3000/api/users/login",
         isRegister ? { name, email, password } : { email, password }
       );
-      console.log(response.data);
+
+      if (rememberMe) {
+        if (response.data.data.token) {
+          localStorage.setItem("token", response.data.data.token);
+        }
+      } else {
+        if (response.data.data.token) {
+          sessionStorage.setItem("token", response.data.data.token);
+        }
+      }
+
+      setSnackbarMessage(
+        isRegister ? "Registration successful!" : "Login successful!"
+      );
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
     } catch (error) {
-      console.error("Error during authentication:", error);
+      setSnackbarMessage(
+        isRegister
+          ? "Registration failed. Please try again."
+          : "Login failed. Please check your credentials."
+      );
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   };
 
@@ -134,6 +161,8 @@ export default function LoginPage() {
         >
           <FormControlLabel
             control={<Checkbox />}
+            value={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
             label={<Typography variant="body2">Remember me</Typography>}
           />
           <Link href="/forgot-password" variant="body2">
@@ -231,6 +260,19 @@ export default function LoginPage() {
           </div>
         </Slide>
       </Paper>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
