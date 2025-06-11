@@ -1,4 +1,3 @@
-import React from "react";
 import {
   AppBar,
   Toolbar,
@@ -16,7 +15,13 @@ export default function Navbar() {
     >
       <Container maxWidth="xl">
         <Toolbar disableGutters>
-          <Box sx={{ flex: 1 }}>
+          <Box
+            sx={{
+              flex: 1,
+              display: { xs: "none", md: "flex" },
+              flexDirection: { md: "column", lg: "row" },
+            }}
+          >
             <Button href="#showcase" color="inherit">
               Презентация
             </Button>
@@ -33,7 +38,13 @@ export default function Navbar() {
           <Box sx={{ flexGrow: 1, textAlign: "center" }}>
             <Typography variant="h2">Tracker App</Typography>
           </Box>
-          <Box sx={{ flex: 1 }}>
+          <Box
+            sx={{
+              flex: 1,
+              display: { xs: "none", md: "flex" },
+              flexDirection: { md: "column", lg: "row" },
+            }}
+          >
             <Button href="#reviews" color="inherit">
               Отзывы
             </Button>

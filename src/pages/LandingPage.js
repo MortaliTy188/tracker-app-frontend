@@ -1,6 +1,7 @@
 import * as React from "react";
-import { useState } from "react";
 import Navbar from "../components/Navbar";
+import { useForm, useSnackbar } from "../hooks";
+import { sendFeedback } from "../api";
 import {
   Button,
   Typography,
@@ -15,6 +16,8 @@ import {
   Paper,
   Grid,
   TextField,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -28,74 +31,76 @@ import PhoneIcon from "@mui/icons-material/Phone";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import SendIcon from "@mui/icons-material/Send";
 
-// Примерные значения для страниц и настроек
-const pages = ["Home", "About", "Contact"];
-const settings = ["Profile", "Account", "Logout"];
-
 export default function LandingPage() {
-  const [anchorElNav, setAnchorElNav] = useState(null);
-  const [anchorElUser, setAnchorElUser] = useState(null);
+  const {
+    snackbarOpen,
+    snackbarMessage,
+    snackbarSeverity,
+    showSuccess,
+    showError,
+    hideSnackbar,
+  } = useSnackbar();
 
-  const handleOpenNavMenu = (event) => {
-    setAnchorElNav(event.currentTarget);
+  const validateForm = (data) => {
+    const errors = {};
+
+    if (!data.name || !data.name.trim()) {
+      errors.name = "Имя обязательно для заполнения";
+    }
+
+    if (!data.email || !data.email.trim()) {
+      errors.email = "Email обязателен для заполнения";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      errors.email = "Введите корректный email";
+    }
+
+    if (!data.subject || !data.subject.trim()) {
+      errors.subject = "Тема сообщения обязательна";
+    }
+
+    if (!data.message || !data.message.trim()) {
+      errors.message = "Сообщение не может быть пустым";
+    } else if (data.message.trim().length < 10) {
+      errors.message = "Сообщение должно содержать минимум 10 символов";
+    }
+
+    return errors;
   };
 
-  const handleCloseNavMenu = () => {
-    setAnchorElNav(null);
-  };
-
-  const handleOpenUserMenu = (event) => {
-    setAnchorElUser(event.currentTarget);
-  };
-
-  const handleCloseUserMenu = () => {
-    setAnchorElUser(null);
-  };
-
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-  });
-
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    // Здесь будет логика отправки формы
-    console.log("Form data:", formData);
-    // Сброс формы после отправки
-    setFormData({ name: "", email: "", subject: "", message: "" });
-  };
+  const { formData, handleInputChange, isSubmitting, errors } = useForm(
+    {
+      user_name: "",
+      user_email: "",
+      email_theme: "",
+      message: "",
+    },
+    async (data) => {
+      console.log("Форма отправлена через useForm:", data);
+      try {
+        await sendFeedback(data);
+        showSuccess(
+          "Сообщение успешно отправлено! Мы свяжемся с вами в ближайшее время."
+        );
+      } catch (error) {
+        showError(
+          "Ошибка при отправке сообщения. Пожалуйста, попробуйте позже."
+        );
+        console.error("Error sending feedback:", error);
+      }
+    },
+    validateForm
+  );
 
   return (
     <Box sx={{ backgroundColor: "#710f6f; color: #fff" }}>
-      <Navbar
-        pages={pages}
-        settings={settings}
-        anchorElNav={anchorElNav}
-        setAnchorElNav={setAnchorElNav}
-        anchorElUser={anchorElUser}
-        setAnchorElUser={setAnchorElUser}
-        handleOpenNavMenu={handleOpenNavMenu}
-        handleCloseNavMenu={handleCloseNavMenu}
-        handleOpenUserMenu={handleOpenUserMenu}
-        handleCloseUserMenu={handleCloseUserMenu}
-      />
+      <Navbar />
       <Box
         maxWidth="90vw"
         margin={"3rem auto"}
         id="showcase"
         sx={{
           position: "relative",
-          minHeight: "100vh",
+          minHeight: { lg: "100vh", sm: "50vh" },
           py: 8,
           borderRadius: 10,
           display: "flex",
@@ -124,10 +129,17 @@ export default function LandingPage() {
           },
         }}
       >
-        <Typography variant="h1" gutterBottom>
+        <Typography
+          variant="h1"
+          gutterBottom
+          sx={{ fontSize: { lg: "6rem", md: "4rem", sm: "2rem", xs: "20px" } }}
+        >
           Комфортно следите за обучением
         </Typography>
-        <Typography variant="body1" sx={{ fontSize: 20, marginBottom: 4 }}>
+        <Typography
+          variant="body1"
+          sx={{ fontSize: { lg: "20px", xs: "15px" }, marginBottom: 4 }}
+        >
           Удобно отслеживайте свой прогресс в нашем интуитивном приложении,
           созданном для упрощения обучения и достижения лучших результатов
         </Typography>
@@ -171,6 +183,9 @@ export default function LandingPage() {
                 flexDirection: "column",
                 alignItems: "center",
                 gap: 4,
+                "@media (max-width: 1100px)": {
+                  maxWidth: "85%",
+                },
               }}
             >
               <ListItem alignItems="flex-start" sx={{ width: "100%" }}>
@@ -252,7 +267,7 @@ export default function LandingPage() {
       <Box
         sx={{
           width: "100vw",
-          height: "70vh",
+          minHeight: "70vh",
           backgroundColor: "#fff",
           color: "#000",
         }}
@@ -285,6 +300,9 @@ export default function LandingPage() {
               mt: 15,
               width: "100%",
               gap: 5,
+              "@media (max-width: 840px)": {
+                flexDirection: "column",
+              },
             }}
           >
             <Box
@@ -342,7 +360,7 @@ export default function LandingPage() {
       <Box>
         <Container
           maxWidth="false"
-          id="why-choose-us"
+          id="what-will-you-get"
           sx={{ minHeight: "100vh", py: 15 }}
         >
           <Typography variant="h3" gutterBottom>
@@ -365,6 +383,9 @@ export default function LandingPage() {
                 flexDirection: "column",
                 alignItems: "center",
                 gap: 4,
+                "@media (max-width: 1100px)": {
+                  maxWidth: "85%",
+                },
               }}
             >
               <ListItem alignItems="flex-start" sx={{ width: "100%" }}>
@@ -446,7 +467,7 @@ export default function LandingPage() {
       <Box
         sx={{
           width: "100vw",
-          height: "70vh",
+          minHeight: "70vh",
           backgroundColor: "#fff",
           color: "#000",
         }}
@@ -476,6 +497,9 @@ export default function LandingPage() {
               mt: 15,
               width: "100%",
               gap: 5,
+              "@media (max-width: 600px)": {
+                gridTemplateColumns: "repeat(1, 1fr)",
+              },
             }}
           >
             <Box
@@ -616,6 +640,9 @@ export default function LandingPage() {
               gap: 4,
               mt: 4,
               width: "100%",
+              "@media (max-width: 800px)": {
+                gridTemplateColumns: "repeat(1, 1fr)",
+              },
             }}
           >
             <Box
@@ -635,15 +662,23 @@ export default function LandingPage() {
                   alignSelf: "center",
                 }}
               />
-              <Typography variant="h3" gutterBottom sx={{ fontSize: 24 }}>
-                Базовый тариф
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: 14, mb: 2 }}>
-                0 Руб
-              </Typography>
-              <Typography variant="body1">
-                Создание целей и зачач, отслеживание прогресса в процентах
-              </Typography>
+              <Box
+                sx={{
+                  "@media (max-width: 800px)": {
+                    textAlign: "center",
+                  },
+                }}
+              >
+                <Typography variant="h3" gutterBottom sx={{ fontSize: 24 }}>
+                  Базовый тариф
+                </Typography>
+                <Typography variant="body2" sx={{ fontSize: 14, mb: 2 }}>
+                  0 Руб
+                </Typography>
+                <Typography variant="body1">
+                  Создание целей и зачач, отслеживание прогресса в процентах
+                </Typography>
+              </Box>
             </Box>
             <Box
               sx={{
@@ -662,15 +697,23 @@ export default function LandingPage() {
                   alignSelf: "center",
                 }}
               />
-              <Typography variant="h3" gutterBottom sx={{ fontSize: 24 }}>
-                Базовый тариф
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: 14, mb: 2 }}>
-                0 Руб
-              </Typography>
-              <Typography variant="body1">
-                Создание целей и зачач, отслеживание прогресса в процентах
-              </Typography>
+              <Box
+                sx={{
+                  "@media (max-width: 800px)": {
+                    textAlign: "center",
+                  },
+                }}
+              >
+                <Typography variant="h3" gutterBottom sx={{ fontSize: 24 }}>
+                  Базовый тариф
+                </Typography>
+                <Typography variant="body2" sx={{ fontSize: 14, mb: 2 }}>
+                  0 Руб
+                </Typography>
+                <Typography variant="body1">
+                  Создание целей и зачач, отслеживание прогресса в процентах
+                </Typography>
+              </Box>
             </Box>
             <Box
               sx={{
@@ -689,26 +732,34 @@ export default function LandingPage() {
                   alignSelf: "center",
                 }}
               />
-              <Typography variant="h3" gutterBottom sx={{ fontSize: 24 }}>
-                Базовый тариф
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: 14, mb: 2 }}>
-                0 Руб
-              </Typography>
-              <Typography variant="body1">
-                Создание целей и зачач, отслеживание прогресса в процентах
-              </Typography>
+              <Box
+                sx={{
+                  "@media (max-width: 800px)": {
+                    textAlign: "center",
+                  },
+                }}
+              >
+                <Typography variant="h3" gutterBottom sx={{ fontSize: 24 }}>
+                  Базовый тариф
+                </Typography>
+                <Typography variant="body2" sx={{ fontSize: 14, mb: 2 }}>
+                  0 Руб
+                </Typography>
+                <Typography variant="body1">
+                  Создание целей и зачач, отслеживание прогресса в процентах
+                </Typography>
+              </Box>
             </Box>
           </Box>
         </Container>
       </Box>
 
-      <Box sx={{ height: "70vh", width: "100vw", backgroundColor: "#fff" }}>
+      <Box sx={{ minHeight: "70vh", width: "100vw", backgroundColor: "#fff" }}>
         <Container maxWidth="md" id="faq" sx={{ minHeight: "100vh", py: 2 }}>
-          <Typography variant="h3" gutterBottom sx={{ mb: 4 }}>
+          <Typography variant="h3" gutterBottom sx={{ mb: 4, color: "black" }}>
             Часто задаваемые вопросы
           </Typography>
-          <Typography sx={{ mb: 6, fontSize: 18 }}>
+          <Typography sx={{ mb: 6, fontSize: 18, color: "black" }}>
             Ответы на самые популярные вопросы о нашем приложении.
           </Typography>
 
@@ -844,16 +895,40 @@ export default function LandingPage() {
             Свяжитесь с нами любым удобным способом или оставьте сообщение
           </Typography>
 
-          <Grid container spacing={6}>
+          <Grid
+            container
+            spacing={6}
+            sx={{
+              "@media (max-width:1100px)": {
+                justifyContent: "center",
+              },
+            }}
+          >
             {/* Контактная информация */}
             <Grid item xs={12} md={6}>
               <Box sx={{ mb: 4 }}>
-                <Typography variant="h4" gutterBottom sx={{ color: "#fff" }}>
+                <Typography
+                  variant="h4"
+                  gutterBottom
+                  sx={{
+                    color: "#fff",
+                    "@media (max-width: 1100px)": {
+                      display: "none",
+                    },
+                  }}
+                >
                   Наши контакты
                 </Typography>
                 <Typography
                   variant="body1"
-                  sx={{ mb: 4, color: "#fff", opacity: 0.9 }}
+                  sx={{
+                    mb: 4,
+                    color: "#fff",
+                    opacity: 0.9,
+                    "@media (max-width: 1100px)": {
+                      display: "none",
+                    },
+                  }}
                 >
                   Мы всегда готовы ответить на ваши вопросы и помочь с
                   использованием приложения.
@@ -965,34 +1040,40 @@ export default function LandingPage() {
                   Обратная связь
                 </Typography>
 
-                <Box
-                  component="form"
-                  onSubmit={handleSubmit}
-                  sx={{ display: "flex", flexDirection: "column", gap: 3 }}
-                >
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                   <TextField
                     fullWidth
                     label="Ваше имя"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    required
                     variant="outlined"
+                    error={!!errors.name}
+                    helperText={errors.name}
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         color: "#fff",
                         "& fieldset": {
-                          borderColor: "rgba(255, 255, 255, 0.5)",
+                          borderColor: errors.name
+                            ? "#f44336"
+                            : "rgba(255, 255, 255, 0.5)",
                         },
                         "&:hover fieldset": {
-                          borderColor: "rgba(255, 255, 255, 0.7)",
+                          borderColor: errors.name
+                            ? "#f44336"
+                            : "rgba(255, 255, 255, 0.7)",
                         },
                         "&.Mui-focused fieldset": {
-                          borderColor: "#fff",
+                          borderColor: errors.name ? "#f44336" : "#fff",
                         },
                       },
                       "& .MuiInputLabel-root": {
-                        color: "rgba(255, 255, 255, 0.7)",
+                        color: errors.name
+                          ? "#f44336"
+                          : "rgba(255, 255, 255, 0.7)",
+                      },
+                      "& .MuiFormHelperText-root": {
+                        color: "#f44336",
                       },
                     }}
                   />
@@ -1004,23 +1085,33 @@ export default function LandingPage() {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    required
                     variant="outlined"
+                    error={!!errors.email}
+                    helperText={errors.email}
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         color: "#fff",
                         "& fieldset": {
-                          borderColor: "rgba(255, 255, 255, 0.5)",
+                          borderColor: errors.email
+                            ? "#f44336"
+                            : "rgba(255, 255, 255, 0.5)",
                         },
                         "&:hover fieldset": {
-                          borderColor: "rgba(255, 255, 255, 0.7)",
+                          borderColor: errors.email
+                            ? "#f44336"
+                            : "rgba(255, 255, 255, 0.7)",
                         },
                         "&.Mui-focused fieldset": {
-                          borderColor: "#fff",
+                          borderColor: errors.email ? "#f44336" : "#fff",
                         },
                       },
                       "& .MuiInputLabel-root": {
-                        color: "rgba(255, 255, 255, 0.7)",
+                        color: errors.email
+                          ? "#f44336"
+                          : "rgba(255, 255, 255, 0.7)",
+                      },
+                      "& .MuiFormHelperText-root": {
+                        color: "#f44336",
                       },
                     }}
                   />
@@ -1031,23 +1122,33 @@ export default function LandingPage() {
                     name="subject"
                     value={formData.subject}
                     onChange={handleInputChange}
-                    required
                     variant="outlined"
+                    error={!!errors.subject}
+                    helperText={errors.subject}
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         color: "#fff",
                         "& fieldset": {
-                          borderColor: "rgba(255, 255, 255, 0.5)",
+                          borderColor: errors.subject
+                            ? "#f44336"
+                            : "rgba(255, 255, 255, 0.5)",
                         },
                         "&:hover fieldset": {
-                          borderColor: "rgba(255, 255, 255, 0.7)",
+                          borderColor: errors.subject
+                            ? "#f44336"
+                            : "rgba(255, 255, 255, 0.7)",
                         },
                         "&.Mui-focused fieldset": {
-                          borderColor: "#fff",
+                          borderColor: errors.subject ? "#f44336" : "#fff",
                         },
                       },
                       "& .MuiInputLabel-root": {
-                        color: "rgba(255, 255, 255, 0.7)",
+                        color: errors.subject
+                          ? "#f44336"
+                          : "rgba(255, 255, 255, 0.7)",
+                      },
+                      "& .MuiFormHelperText-root": {
+                        color: "#f44336",
                       },
                     }}
                   />
@@ -1058,51 +1159,89 @@ export default function LandingPage() {
                     name="message"
                     value={formData.message}
                     onChange={handleInputChange}
-                    required
                     multiline
                     rows={4}
                     variant="outlined"
+                    error={!!errors.message}
+                    helperText={errors.message}
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         color: "#fff",
                         "& fieldset": {
-                          borderColor: "rgba(255, 255, 255, 0.5)",
+                          borderColor: errors.message
+                            ? "#f44336"
+                            : "rgba(255, 255, 255, 0.5)",
                         },
                         "&:hover fieldset": {
-                          borderColor: "rgba(255, 255, 255, 0.7)",
+                          borderColor: errors.message
+                            ? "#f44336"
+                            : "rgba(255, 255, 255, 0.7)",
                         },
                         "&.Mui-focused fieldset": {
-                          borderColor: "#fff",
+                          borderColor: errors.message ? "#f44336" : "#fff",
                         },
                       },
                       "& .MuiInputLabel-root": {
-                        color: "rgba(255, 255, 255, 0.7)",
+                        color: errors.message
+                          ? "#f44336"
+                          : "rgba(255, 255, 255, 0.7)",
+                      },
+                      "& .MuiFormHelperText-root": {
+                        color: "#f44336",
                       },
                     }}
                   />
 
                   <Button
-                    type="submit"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+
+                      // Валидация данных
+                      const validationErrors = validateForm(formData);
+                      if (Object.keys(validationErrors).length > 0) {
+                        console.log("Ошибки валидации:", validationErrors);
+                        return;
+                      }
+
+                      console.log("Отправляем данные:", formData);
+
+                      try {
+                        await sendFeedback(formData);
+                        showSuccess(
+                          "Сообщение успешно отправлено! Мы свяжемся с вами в ближайшее время."
+                        );
+                      } catch (error) {
+                        showError(
+                          "Ошибка при отправке сообщения. Пожалуйста, попробуйте позже."
+                        );
+                        console.error("Error sending feedback:", error);
+                      }
+                    }}
                     variant="contained"
                     size="large"
                     endIcon={<SendIcon />}
+                    disabled={isSubmitting}
                     sx={{
                       backgroundColor: "#fff",
                       color: "#710f6f",
                       "&:hover": {
                         backgroundColor: "rgba(255, 255, 255, 0.9)",
                       },
+                      "&:disabled": {
+                        backgroundColor: "rgba(255, 255, 255, 0.5)",
+                        color: "rgba(113, 15, 111, 0.5)",
+                      },
                       py: 1.5,
                     }}
                   >
-                    Отправить сообщение
+                    {isSubmitting ? "Отправляется..." : "Отправить сообщение"}
                   </Button>
                 </Box>
               </Paper>
             </Grid>
           </Grid>
 
-          {/* Дополнительная информация */}
           <Box sx={{ mt: 8, textAlign: "center" }}>
             <Typography variant="h5" gutterBottom sx={{ color: "#fff" }}>
               Время работы поддержки
@@ -1116,6 +1255,21 @@ export default function LandingPage() {
           </Box>
         </Container>
       </Box>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={hideSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={hideSnackbar}
+          severity={snackbarSeverity}
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

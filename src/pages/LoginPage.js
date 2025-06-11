@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import { useAuth, useSnackbar } from "../hooks";
 import {
   TextField,
   Button,
@@ -20,49 +20,39 @@ export default function LoginPage() {
   const [name, setName] = useState(""); // состояние для имени (только для регистрации)
   const [isRegister, setIsRegister] = useState(false); // состояние для переключения между регистрацией и входом
   const [rememberMe, setRememberMe] = useState(false); // состояние для чекбокса "Запомнить меня"
-  const [snackbarOpen, setSnackbarOpen] = useState(false); // состояние для Snackbar
-  const [snackbarMessage, setSnackbarMessage] = useState(""); // сообщение для Snackbar
-  const [snackbarSeverity, setSnackbarSeverity] = useState("success"); // уровень серьезности Snackbar
+
+  // Use custom hooks
+  const { login, register, isLoading } = useAuth();
+  const {
+    snackbarOpen,
+    snackbarMessage,
+    snackbarSeverity,
+    showSuccess,
+    showError,
+    hideSnackbar,
+  } = useSnackbar();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (isRegister && password.length < 6) {
-      alert("Пароль должен быть минимум 6 символов");
-      return;
-    }
-
     try {
-      const response = await axios.post(
-        isRegister
-          ? "http://localhost:3000/api/users/register"
-          : "http://localhost:3000/api/users/login",
-        isRegister ? { name, email, password } : { email, password }
-      );
+      let result;
 
-      if (rememberMe) {
-        if (response.data.data.token) {
-          localStorage.setItem("token", response.data.data.token);
-        }
+      if (isRegister) {
+        result = await register({ name, email, password });
       } else {
-        if (response.data.data.token) {
-          sessionStorage.setItem("token", response.data.data.token);
-        }
+        result = await login({ email, password }, rememberMe);
       }
 
-      setSnackbarMessage(
-        isRegister ? "Registration successful!" : "Login successful!"
-      );
-      setSnackbarSeverity("success");
-      setSnackbarOpen(true);
+      if (result.success) {
+        showSuccess(result.message);
+        setIsRegister(false);
+        setName("");
+      } else {
+        showError(result.message);
+      }
     } catch (error) {
-      setSnackbarMessage(
-        isRegister
-          ? "Registration failed. Please try again."
-          : "Login failed. Please check your credentials."
-      );
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
+      showError("An unexpected error occurred. Please try again.");
     }
   };
 
@@ -76,6 +66,9 @@ export default function LoginPage() {
         alignItems: "center",
         overflow: "hidden",
         height: "100%",
+        "@media (max-width: 1000px)": {
+          display: "none",
+        },
       }}
     >
       <img
@@ -107,7 +100,14 @@ export default function LoginPage() {
       </Typography>
 
       <Box>
-        <Typography variant="h2">
+        <Typography
+          variant="h2"
+          sx={{
+            "@media (max-width: 760px)": {
+              fontSize: "2rem",
+            },
+          }}
+        >
           {isRegister ? `Glad to see you` : "Holla, Welcome Back"}
         </Typography>
         <Typography variant="caption" sx={{ fontSize: 20 }}>
@@ -172,6 +172,7 @@ export default function LoginPage() {
         <Button
           type="submit"
           variant="contained"
+          disabled={isLoading}
           sx={{
             backgroundColor: "#1976d2",
             color: "#fff",
@@ -180,7 +181,7 @@ export default function LoginPage() {
             },
           }}
         >
-          {isRegister ? "Register" : "Login"}
+          {isLoading ? "Loading..." : isRegister ? "Register" : "Login"}
         </Button>
       </Box>
       <Box>
@@ -221,6 +222,11 @@ export default function LoginPage() {
           display: "flex",
           gap: 2,
           borderRadius: 10,
+          "@media (max-width: 800px)": {
+            height: "100%",
+            width: "100%",
+            borderRadius: 0,
+          },
         }}
       >
         <Slide
@@ -263,13 +269,10 @@ export default function LoginPage() {
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={4000}
-        onClose={() => setSnackbarOpen(false)}
+        onClose={hideSnackbar}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity={snackbarSeverity}
-        >
+        <Alert onClose={hideSnackbar} severity={snackbarSeverity}>
           {snackbarMessage}
         </Alert>
       </Snackbar>
