@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import { loginUser, registerUser } from "../api/userApi";
 
 /**
  * Custom hook for authentication logic
@@ -13,25 +13,25 @@ export const useAuth = () => {
     setError(null);
 
     try {
-      const response = await axios.post(
-        "http://localhost:3000/api/users/login",
-        credentials
-      );
+      const response = await loginUser(credentials);
 
-      const token = response.data.data.token;
+      const token = response.data.token;
+      const user = response.data.user;
 
       if (token) {
         if (rememberMe) {
           localStorage.setItem("token", token);
+          localStorage.setItem("user", JSON.stringify(user));
         } else {
           sessionStorage.setItem("token", token);
+          sessionStorage.setItem("user", JSON.stringify(user));
         }
       }
 
       return {
         success: true,
-        data: response.data,
-        message: "Login successful!",
+        data: response,
+        message: response.message || "Login successful!",
       };
     } catch (error) {
       const errorMessage =
@@ -63,12 +63,9 @@ export const useAuth = () => {
     }
 
     try {
-      const response = await axios.post(
-        "http://localhost:3000/api/users/register",
-        userData
-      );
+      const response = await registerUser(userData);
 
-      const token = response.data.data.token;
+      const token = response.data?.token;
 
       if (token) {
         sessionStorage.setItem("token", token);
@@ -76,8 +73,8 @@ export const useAuth = () => {
 
       return {
         success: true,
-        data: response.data,
-        message: "Registration successful!",
+        data: response,
+        message: response.message || "Registration successful!",
       };
     } catch (error) {
       const errorMessage =
@@ -92,10 +89,11 @@ export const useAuth = () => {
       setIsLoading(false);
     }
   };
-
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
   };
 
   const isAuthenticated = () => {
@@ -106,6 +104,12 @@ export const useAuth = () => {
     return localStorage.getItem("token") || sessionStorage.getItem("token");
   };
 
+  const getUser = () => {
+    const userStr =
+      localStorage.getItem("user") || sessionStorage.getItem("user");
+    return userStr ? JSON.parse(userStr) : null;
+  };
+
   return {
     isLoading,
     error,
@@ -114,5 +118,6 @@ export const useAuth = () => {
     logout,
     isAuthenticated,
     getToken,
+    getUser,
   };
 };

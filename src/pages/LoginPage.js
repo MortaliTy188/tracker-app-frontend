@@ -31,7 +31,6 @@ export default function LoginPage() {
     showError,
     hideSnackbar,
   } = useSnackbar();
-
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -46,8 +45,14 @@ export default function LoginPage() {
 
       if (result.success) {
         showSuccess(result.message);
-        setIsRegister(false);
-        setName("");
+        if (isRegister) {
+          setIsRegister(false);
+          setName("");
+        } else {
+          setTimeout(() => {
+            window.location.href = "/dashboard";
+          }, 1000);
+        }
       } else {
         showError(result.message);
       }

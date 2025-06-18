@@ -1,4 +1,7 @@
 export { useNavigation } from "./useNavigation";
 export { useForm } from "./useForm";
 export { useAuth } from "./useAuth";
+export { useProfile } from "./useProfile";
+export { useFeedback } from "./useFeedback";
 export { useSnackbar } from "./useSnackbar";
+export { useLastVisit } from "./useLastVisit";

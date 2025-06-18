@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 /**
  * Custom hook for managing form data and basic validation
@@ -11,50 +11,58 @@ export const useForm = (initialValues, onSubmit, validate) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (event) => {
+  const handleInputChange = useCallback((event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
 
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setIsSubmitting(true);
-
-    if (validate) {
-      const validationErrors = validate(formData);
-      if (Object.keys(validationErrors).length > 0) {
-        setErrors(validationErrors);
-        setIsSubmitting(false);
-        return;
+    setErrors((prev) => {
+      if (prev[name]) {
+        return {
+          ...prev,
+          [name]: "",
+        };
       }
-    }
+      return prev;
+    });
+  }, []);
 
-    try {
-      await onSubmit(formData);
-      setFormData(initialValues);
-      setErrors({});
-    } catch (error) {
-      console.error("Form submission error:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const handleSubmit = useCallback(
+    async (event) => {
+      if (event && event.preventDefault) {
+        event.preventDefault();
+      }
+      setIsSubmitting(true);
 
-  const resetForm = () => {
+      if (validate) {
+        const validationErrors = validate(formData);
+        if (Object.keys(validationErrors).length > 0) {
+          setErrors(validationErrors);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      try {
+        await onSubmit(formData);
+        setFormData(initialValues);
+        setErrors({});
+      } catch (error) {
+        console.error("Form submission error:", error);
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [formData, validate, onSubmit, initialValues]
+  );
+
+  const resetForm = useCallback(() => {
     setFormData(initialValues);
     setErrors({});
     setIsSubmitting(false);
-  };
+  }, [initialValues]);
 
   return {
     formData,
