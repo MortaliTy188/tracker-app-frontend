@@ -5,6 +5,9 @@ import {
   useSnackbar,
   useForm,
   useLastVisit,
+  useAchievements,
+  useActivity,
+  useSkills,
 } from "../hooks";
 import {
   Box,
@@ -37,6 +40,13 @@ import {
   Badge,
   Breadcrumbs,
   Link,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  ToggleButton,
+  ToggleButtonGroup,
+  Pagination,
 } from "@mui/material";
 import {
   Person,
@@ -57,9 +67,52 @@ import {
   Timeline,
   Dashboard,
   Home,
+  FilterList,
+  CheckCircle,
+  RadioButtonUnchecked,
 } from "@mui/icons-material";
 import Navbar from "../components/Navbar";
 import { getAvatarUrl } from "../utils/avatarUtils";
+
+/**
+ * Получить текстовую метку для статуса активности
+ * @param {string} status - Статус активности
+ * @returns {string} Текстовая метка
+ */
+const getStatusLabel = (status) => {
+  switch (status) {
+    case "success":
+      return "Успешно";
+    case "info":
+      return "Информация";
+    case "warning":
+      return "Изменение";
+    case "default":
+      return "Событие";
+    default:
+      return "Неизвестно";
+  }
+};
+
+/**
+ * Получить цвет для статуса активности
+ * @param {string} status - Статус активности
+ * @returns {string} Цвет для Chip компонента
+ */
+const getStatusColor = (status) => {
+  switch (status) {
+    case "success":
+      return "success";
+    case "info":
+      return "info";
+    case "warning":
+      return "warning";
+    case "default":
+      return "default";
+    default:
+      return "default";
+  }
+};
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -75,11 +128,74 @@ function TabPanel({ children, value, index, ...other }) {
   );
 }
 
+/**
+ * Перевести категорию достижения на русский язык
+ * @param {string} category - Английское название категории
+ * @returns {string} Русское название категории
+ */
+const translateCategory = (category) => {
+  const translations = {
+    notes_written: "Заметки",
+    topics_completed: "Завершение тем",
+    first_action: "Первые действия",
+    special: "Особые",
+    level_reached: "Уровни",
+    skills_created: "Создание навыков",
+    streak_days: "Серии дней",
+    // Дополнительные возможные категории
+    learning: "Обучение",
+    progress: "Прогресс",
+    activity: "Активность",
+    skills: "Навыки",
+    social: "Социальное",
+    time: "Время",
+    completion: "Завершение",
+    streak: "Серии",
+    milestones: "Вехи",
+    achievements: "Достижения",
+    notes: "Заметки",
+    topics: "Темы",
+    practice: "Практика",
+    consistency: "Постоянство",
+    dedication: "Преданность",
+    mastery: "Мастерство",
+    exploration: "Исследование",
+    challenge: "Вызов",
+  };
+
+  return translations[category] || category;
+};
+
+/**
+ * Перевести редкость достижения на русский язык
+ * @param {string} rarity - Английское название редкости
+ * @returns {string} Русское название редкости
+ */
+const translateRarity = (rarity) => {
+  const translations = {
+    common: "Обычное",
+    uncommon: "Необычное",
+    rare: "Редкое",
+    epic: "Эпическое",
+    legendary: "Легендарное",
+  };
+
+  return translations[rarity] || rarity;
+};
+
 export default function ProfilePage() {
   const [tabValue, setTabValue] = useState(0);
   const [editMode, setEditMode] = useState(false);
   const [changePasswordDialog, setChangePasswordDialog] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
+  // States for achievements filtering
+  const [achievementFilter, setAchievementFilter] = useState("all"); // all, completed, incomplete
+  const [categoryFilter, setCategoryFilter] = useState("all"); // all, specific category
+  const [rarityFilter, setRarityFilter] = useState("all"); // all, common, uncommon, rare, epic, legendary
+
+  // States for activity history pagination
+  const [activityPage, setActivityPage] = useState(1);
+  const activityItemsPerPage = 10;
 
   const { getPreviousVisit } = useLastVisit();
 
@@ -99,7 +215,45 @@ export default function ProfilePage() {
     showSuccess,
     showError,
     hideSnackbar,
-  } = useSnackbar(); // Form for profile editing
+  } = useSnackbar();
+  // Achievements hook
+  const {
+    achievements,
+    stats,
+    isLoading: achievementsLoading,
+    error: achievementsError,
+    loadAchievements,
+    loadStats,
+    getAchievementsByCategory,
+    getCompletedAchievements,
+    getIncompleteAchievements,
+    getAchievementsByRarity,
+  } = useAchievements();
+
+  // Activity hook
+  const {
+    activities,
+    isLoading: activityLoading,
+    error: activityError,
+    loadActivity,
+    getRecentActivities,
+  } = useActivity();
+
+  // Skills hook
+  const {
+    skills,
+    skillsStats,
+    isLoading: skillsLoading,
+    error: skillsError,
+    loadSkills,
+    loadSkillsStats,
+    getSkillsByCategory,
+    getCompletedSkills,
+    getInProgressSkills,
+    getOverallProgress,
+  } = useSkills();
+
+  // Form for profile editing
   const {
     formData,
     errors,
@@ -222,27 +376,69 @@ export default function ProfilePage() {
     }
   };
 
-  // Mock activity data
-  const [activityHistory] = useState([
-    {
-      id: 1,
-      action: "Вход в систему",
-      date: "2024-06-17 10:30",
-      status: "success",
-    },
-    {
-      id: 2,
-      action: "Обновление профиля",
-      date: "2024-06-16 15:45",
-      status: "success",
-    },
-    {
-      id: 3,
-      action: "Смена пароля",
-      date: "2024-06-15 09:20",
-      status: "success",
-    },
-  ]);
+  // Function to get filtered achievements
+  const getFilteredAchievements = () => {
+    let filtered = achievements;
+
+    // Apply completion filter
+    if (achievementFilter === "completed") {
+      filtered = getCompletedAchievements();
+    } else if (achievementFilter === "incomplete") {
+      filtered = getIncompleteAchievements();
+    }
+
+    // Apply category filter
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter(
+        (achievement) => achievement.category === categoryFilter
+      );
+    }
+
+    // Apply rarity filter
+    if (rarityFilter !== "all") {
+      filtered = filtered.filter(
+        (achievement) => achievement.rarity === rarityFilter
+      );
+    }
+
+    return filtered;
+  };
+
+  // Get unique categories from achievements
+  const getUniqueCategories = () => {
+    const categories = achievements.map((a) => a.category).filter(Boolean);
+    return [...new Set(categories)];
+  };
+
+  // Get unique rarities from achievements
+  const getUniqueRarities = () => {
+    const rarities = achievements.map((a) => a.rarity).filter(Boolean);
+    return [...new Set(rarities)];
+  };
+
+  // Get paginated activities
+  const getPaginatedActivities = () => {
+    if (!Array.isArray(activities) || activities.length === 0) {
+      return [];
+    }
+
+    const startIndex = (activityPage - 1) * activityItemsPerPage;
+    const endIndex = startIndex + activityItemsPerPage;
+    return activities.slice(startIndex, endIndex);
+  };
+
+  // Get total pages for activities
+  const getTotalActivityPages = () => {
+    if (!Array.isArray(activities) || activities.length === 0) {
+      return 1;
+    }
+    return Math.ceil(activities.length / activityItemsPerPage);
+  };
+
+  // Handle activity page change
+  const handleActivityPageChange = (event, newPage) => {
+    setActivityPage(newPage);
+  };
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -261,9 +457,38 @@ export default function ProfilePage() {
         console.error("Error loading profile:", error);
         showError("Не удалось загрузить данные профиля");
       }
+    }; // Load achievements data
+    const loadAchievementsData = async () => {
+      try {
+        await loadAchievements();
+        await loadStats();
+      } catch (error) {
+        console.error("Error loading achievements:", error);
+      }
+    }; // Load activity data
+    const loadActivityData = async () => {
+      try {
+        await loadActivity();
+      } catch (error) {
+        console.error("Error loading activity:", error);
+      }
     };
+
+    // Load skills data
+    const loadSkillsData = async () => {
+      try {
+        await loadSkills();
+        await loadSkillsStats();
+      } catch (error) {
+        console.error("Error loading skills:", error);
+      }
+    };
+
     loadUserProfile();
-  }, []);
+    loadAchievementsData();
+    loadActivityData();
+    loadSkillsData();
+  }, [loadAchievements, loadStats, loadActivity, loadSkills, loadSkillsStats]);
 
   if (!isAuthenticated()) {
     return (
@@ -401,7 +626,7 @@ export default function ProfilePage() {
               scrollButtons="auto"
             >
               <Tab label="Профиль" icon={<Person />} />
-              <Tab label="Мой прогресс" icon={<TrendingUp />} />
+              <Tab label="Навыки" icon={<TrendingUp />} />
               <Tab label="Достижения" icon={<EmojiEvents />} />
               <Tab label="Безопасность" icon={<Security />} />
               <Tab label="История" icon={<History />} />
@@ -582,253 +807,660 @@ export default function ProfilePage() {
                 </Card>
               </Grid>
             </Grid>
-          </TabPanel>
-          {/* Progress Tab - NEW */}
+          </TabPanel>{" "}
+          {/* Skills Tab */} {/* Skills Tab - Dynamic */}
           <TabPanel value={tabValue} index={1}>
-            <Grid
-              container
-              spacing={3}
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Grid item xs={12} md={8} width={"40%"}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Общий прогресс обучения
-                    </Typography>{" "}
-                    <Box sx={{ mt: 3 }}>
-                      <Typography variant="body2" color="textSecondary">
-                        Заметок: {userProfile.stats.totalNotes}
-                      </Typography>
-                      <LinearProgress
-                        variant="determinate"
-                        value={userProfile.stats.averageProgress}
-                        sx={{ mt: 1, mb: 2, height: 8, borderRadius: 4 }}
-                      />
-                      <Typography variant="h4" color="primary">
-                        {userProfile.stats.averageProgress}%
-                      </Typography>
-                    </Box>
-                    <Divider sx={{ my: 3 }} />
-                    <Typography variant="h6" gutterBottom>
-                      Активные цели
-                    </Typography>
-                    <List>
-                      <ListItem>
-                        <ListItemIcon>
-                          <Assignment color="primary" />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="Изучение JavaScript"
-                          secondary={
-                            <Box>
-                              <Typography variant="body2">
-                                Прогресс: 85%
-                              </Typography>
-                              <LinearProgress
-                                variant="determinate"
-                                value={85}
-                                sx={{ mt: 1 }}
-                              />
-                            </Box>
-                          }
-                        />
-                      </ListItem>
-                      <ListItem>
-                        <ListItemIcon>
-                          <Assignment color="secondary" />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="React Framework"
-                          secondary={
-                            <Box>
-                              <Typography variant="body2">
-                                Прогресс: 60%
-                              </Typography>
-                              <LinearProgress
-                                variant="determinate"
-                                value={60}
-                                sx={{ mt: 1 }}
-                              />
-                            </Box>
-                          }
-                        />
-                      </ListItem>
-                      <ListItem>
-                        <ListItemIcon>
-                          <Assignment color="warning" />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="Node.js Backend"
-                          secondary={
-                            <Box>
-                              <Typography variant="body2">
-                                Прогресс: 30%
-                              </Typography>
-                              <LinearProgress
-                                variant="determinate"
-                                value={30}
-                                sx={{ mt: 1 }}
-                              />
-                            </Box>
-                          }
-                        />
-                      </ListItem>
-                    </List>
-                  </CardContent>
-                </Card>
-              </Grid>
+            {skillsLoading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+                <LinearProgress sx={{ width: "100%" }} />
+              </Box>
+            ) : (
+              <>
+                <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
+                  📚 Ваши навыки
+                </Typography>
 
-              <Grid item xs={12} md={4} width={"40%"}>
-                <Card>
-                  <CardContent>
+                {/* Skills Statistics Overview */}
+                {skillsStats && (
+                  <Paper sx={{ p: 3, mb: 3 }}>
                     <Typography variant="h6" gutterBottom>
-                      Статистика за месяц
+                      Общая статистика навыков
                     </Typography>
-                    <Box sx={{ textAlign: "center", py: 2 }}>
-                      <Typography variant="h3" color="primary">
-                        24
-                      </Typography>
-                      <Typography variant="body2">Дня активности</Typography>
-                    </Box>
-                    <Divider sx={{ my: 2 }} />
-                    <Box sx={{ textAlign: "center", py: 2 }}>
-                      <Typography variant="h3" color="secondary">
-                        156
-                      </Typography>
-                      <Typography variant="body2">Выполнено задач</Typography>
-                    </Box>
-                    <Divider sx={{ my: 2 }} />
-                    <Box sx={{ textAlign: "center", py: 2 }}>
-                      <Typography variant="h3" color="success.main">
-                        42
-                      </Typography>
-                      <Typography variant="body2">Часов обучения</Typography>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-          </TabPanel>
-          {/* Achievements Tab - NEW */}
+                    <Grid container spacing={3} justifyContent="center">
+                      <Grid item xs={6} md={3}>
+                        <Box sx={{ textAlign: "center" }}>
+                          <Typography variant="h4" color="primary">
+                            {skillsStats.overview?.totalSkills || 0}
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary">
+                            Всего навыков
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={6} md={3}>
+                        <Box sx={{ textAlign: "center" }}>
+                          <Typography variant="h4" color="secondary">
+                            {skillsStats.overview?.totalTopics || 0}
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary">
+                            Всего тем
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={6} md={3}>
+                        <Box sx={{ textAlign: "center" }}>
+                          <Typography variant="h4" color="success.main">
+                            {skillsStats.overview?.averageProgress || 0}%
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary">
+                            Средний прогресс
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={6} md={3}>
+                        <Box sx={{ textAlign: "center" }}>
+                          <Typography variant="h4" color="info.main">
+                            {skillsStats.overview?.completedTopics || 0}
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary">
+                            Завершенных тем
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                )}
+
+                {/* Skills List */}
+                <Grid container spacing={3}>
+                  {skills && skills.length > 0 ? (
+                    skills.map((skill) => (
+                      <Grid item xs={12} md={6} key={skill.id}>
+                        <Card sx={{ height: "100%" }}>
+                          <CardContent>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                mb: 2,
+                              }}
+                            >
+                              <Typography variant="h6" component="h3">
+                                {skill.name}
+                              </Typography>
+                              <Chip
+                                label={skill.category?.name || "Без категории"}
+                                color="primary"
+                                size="small"
+                              />
+                            </Box>
+
+                            {skill.description && (
+                              <Typography
+                                variant="body2"
+                                color="textSecondary"
+                                sx={{ mb: 2 }}
+                              >
+                                {skill.description}
+                              </Typography>
+                            )}
+
+                            {/* Skill Progress */}
+                            <Box sx={{ mb: 2 }}>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  mb: 1,
+                                }}
+                              >
+                                <Typography variant="body2">
+                                  Общий прогресс
+                                </Typography>
+                                <Typography variant="body2" color="primary">
+                                  {skill.stats?.averageProgress || 0}%
+                                </Typography>
+                              </Box>
+                              <LinearProgress
+                                variant="determinate"
+                                value={skill.stats?.averageProgress || 0}
+                                sx={{ height: 8, borderRadius: 4 }}
+                              />
+                            </Box>
+
+                            {/* Topics List */}
+                            {skill.topics && skill.topics.length > 0 && (
+                              <Box>
+                                <Typography variant="subtitle2" gutterBottom>
+                                  Темы ({skill.stats?.completedTopics || 0} из{" "}
+                                  {skill.stats?.totalTopics || 0})
+                                </Typography>
+                                <List dense>
+                                  {skill.topics.map((topic) => (
+                                    <ListItem key={topic.id} sx={{ px: 0 }}>
+                                      <ListItemText
+                                        primary={topic.name}
+                                        secondary={
+                                          <Box
+                                            sx={{
+                                              display: "flex",
+                                              alignItems: "center",
+                                              gap: 1,
+                                            }}
+                                          >
+                                            <LinearProgress
+                                              variant="determinate"
+                                              value={topic.progress || 0}
+                                              sx={{
+                                                flexGrow: 1,
+                                                height: 4,
+                                                borderRadius: 2,
+                                              }}
+                                            />
+                                            <Typography variant="caption">
+                                              {topic.progress || 0}%
+                                            </Typography>
+                                          </Box>
+                                        }
+                                      />
+                                      {topic.status && (
+                                        <Chip
+                                          label={topic.status.name}
+                                          size="small"
+                                          color={
+                                            topic.progress === 100
+                                              ? "success"
+                                              : "default"
+                                          }
+                                          variant="outlined"
+                                        />
+                                      )}
+                                    </ListItem>
+                                  ))}
+                                </List>
+                              </Box>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    ))
+                  ) : (
+                    <Grid item xs={12}>
+                      <Card>
+                        <CardContent sx={{ textAlign: "center", py: 6 }}>
+                          <Typography
+                            variant="h6"
+                            color="textSecondary"
+                            gutterBottom
+                          >
+                            У вас пока нет навыков
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary">
+                            Начните создавать навыки для отслеживания своего
+                            прогресса
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  )}
+                </Grid>
+
+                {/* Error Display */}
+                {skillsError && (
+                  <Alert severity="warning" sx={{ mt: 3 }}>
+                    {skillsError}
+                  </Alert>
+                )}
+              </>
+            )}
+          </TabPanel>{" "}
+          {/* Achievements Tab - Dynamic */}
           <TabPanel value={tabValue} index={2}>
-            <Grid item xs={12}>
-              <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-                🏆 Ваши достижения
-              </Typography>
-            </Grid>
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={4}>
-                <Card sx={{ textAlign: "center", p: 2 }}>
-                  <Badge badgeContent="Новое!" color="secondary">
-                    <EmojiEvents sx={{ fontSize: 60, color: "gold" }} />
-                  </Badge>
-                  <Typography variant="h6" sx={{ mt: 2 }}>
-                    Первые шаги
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Создали первую цель обучения
-                  </Typography>
-                  <Chip
-                    label="Получено"
-                    color="success"
-                    size="small"
-                    sx={{ mt: 1 }}
-                  />
-                </Card>
-              </Grid>
+            {achievementsLoading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+                <LinearProgress sx={{ width: "100%" }} />
+              </Box>
+            ) : (
+              <>
+                {" "}
+                <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
+                  🏆 Ваши достижения
+                </Typography>{" "}
+                {/* Filters and Statistics Section */}
+                <Grid container spacing={3} sx={{ mb: 3 }}>
+                  {/* Filters Section - Left Side */}
+                  <Grid item xs={12} md={4}>
+                    <Paper sx={{ p: 3, height: "fit-content" }}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", mb: 2 }}
+                      >
+                        <FilterList sx={{ mr: 1 }} />
+                        <Typography variant="h6">Фильтры</Typography>
+                      </Box>
+                      {/* Completion Status Filter */}
+                      <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                        <InputLabel>Статус выполнения</InputLabel>
+                        <Select
+                          value={achievementFilter}
+                          label="Статус выполнения"
+                          onChange={(e) => setAchievementFilter(e.target.value)}
+                        >
+                          <MenuItem value="all">Все достижения</MenuItem>
+                          <MenuItem value="completed">
+                            <CheckCircle sx={{ mr: 1, fontSize: 18 }} />
+                            Выполненные
+                          </MenuItem>
+                          <MenuItem value="incomplete">
+                            <RadioButtonUnchecked
+                              sx={{ mr: 1, fontSize: 18 }}
+                            />
+                            В процессе
+                          </MenuItem>
+                        </Select>
+                      </FormControl>
+                      {/* Category Filter */}
+                      <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                        <InputLabel>Категория</InputLabel>
+                        <Select
+                          value={categoryFilter}
+                          label="Категория"
+                          onChange={(e) => setCategoryFilter(e.target.value)}
+                        >
+                          <MenuItem value="all">Все категории</MenuItem>
+                          {getUniqueCategories().map((category) => (
+                            <MenuItem key={category} value={category}>
+                              {translateCategory(category)}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      {/* Rarity Filter */}
+                      <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                        <InputLabel>Редкость</InputLabel>
+                        <Select
+                          value={rarityFilter}
+                          label="Редкость"
+                          onChange={(e) => setRarityFilter(e.target.value)}
+                        >
+                          <MenuItem value="all">Любая редкость</MenuItem>
+                          {getUniqueRarities().map((rarity) => (
+                            <MenuItem key={rarity} value={rarity}>
+                              {translateRarity(rarity)}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>{" "}
+                      {/* Filter Summary */}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 1,
+                          mb: 2,
+                        }}
+                      >
+                        {achievementFilter !== "all" && (
+                          <Chip
+                            label={`Статус: ${
+                              achievementFilter === "completed"
+                                ? "Выполненные"
+                                : "В процессе"
+                            }`}
+                            onDelete={() => setAchievementFilter("all")}
+                            color="primary"
+                            size="small"
+                          />
+                        )}
+                        {categoryFilter !== "all" && (
+                          <Chip
+                            label={`Категория: ${translateCategory(
+                              categoryFilter
+                            )}`}
+                            onDelete={() => setCategoryFilter("all")}
+                            color="secondary"
+                            size="small"
+                          />
+                        )}
+                        {rarityFilter !== "all" && (
+                          <Chip
+                            label={`Редкость: ${translateRarity(rarityFilter)}`}
+                            onDelete={() => setRarityFilter("all")}
+                            color="info"
+                            size="small"
+                          />
+                        )}
+                      </Box>
+                      {/* Reset Filters Button */}
+                      {(achievementFilter !== "all" ||
+                        categoryFilter !== "all" ||
+                        rarityFilter !== "all") && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          fullWidth
+                          onClick={() => {
+                            setAchievementFilter("all");
+                            setCategoryFilter("all");
+                            setRarityFilter("all");
+                          }}
+                        >
+                          Сбросить все фильтры
+                        </Button>
+                      )}
+                    </Paper>
+                  </Grid>
 
-              <Grid item xs={12} md={4}>
-                <Card sx={{ textAlign: "center", p: 2 }}>
-                  <EmojiEvents sx={{ fontSize: 60, color: "silver" }} />
-                  <Typography variant="h6" sx={{ mt: 2 }}>
-                    Марафонец
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    7 дней подряд активности
-                  </Typography>
-                  <Chip
-                    label="Получено"
-                    color="success"
-                    size="small"
-                    sx={{ mt: 1 }}
-                  />
-                </Card>
-              </Grid>
-
-              <Grid item xs={12} md={4}>
-                <Card sx={{ textAlign: "center", p: 2 }}>
-                  <Star sx={{ fontSize: 60, color: "bronze" }} />
-                  <Typography variant="h6" sx={{ mt: 2 }}>
-                    Целеустремленный
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Завершили 10 целей
-                  </Typography>
-                  <Chip
-                    label="5/10"
-                    color="warning"
-                    size="small"
-                    sx={{ mt: 1 }}
-                  />
-                </Card>
-              </Grid>
-
-              <Grid item xs={12} md={4}>
-                <Card sx={{ textAlign: "center", p: 2, opacity: 0.6 }}>
-                  <Timeline sx={{ fontSize: 60, color: "grey" }} />
-                  <Typography variant="h6" sx={{ mt: 2 }}>
-                    Эксперт
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    100 часов обучения
-                  </Typography>
-                  <Chip
-                    label="42/100"
-                    color="default"
-                    size="small"
-                    sx={{ mt: 1 }}
-                  />
-                </Card>
-              </Grid>
-
-              <Grid item xs={12} md={4}>
-                <Card sx={{ textAlign: "center", p: 2, opacity: 0.6 }}>
-                  <EmojiEvents sx={{ fontSize: 60, color: "grey" }} />
-                  <Typography variant="h6" sx={{ mt: 2 }}>
-                    Мастер
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Завершили 50 целей
-                  </Typography>
-                  <Chip
-                    label="5/50"
-                    color="default"
-                    size="small"
-                    sx={{ mt: 1 }}
-                  />
-                </Card>
-              </Grid>
-
-              <Grid item xs={12} md={4}>
-                <Card sx={{ textAlign: "center", p: 2, opacity: 0.6 }}>
-                  <Star sx={{ fontSize: 60, color: "grey" }} />
-                  <Typography variant="h6" sx={{ mt: 2 }}>
-                    Легенда
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    30 дней подряд активности
-                  </Typography>
-                  <Chip
-                    label="7/30"
-                    color="default"
-                    size="small"
-                    sx={{ mt: 1 }}
-                  />
-                </Card>
-              </Grid>
-            </Grid>
+                  {/* Statistics Section - Right Side */}
+                  {stats && (
+                    <Grid item xs={12} md={8}>
+                      <Paper sx={{ p: 3 }}>
+                        <Typography variant="h6" gutterBottom>
+                          Общая статистика
+                        </Typography>
+                        <Grid container spacing={3}>
+                          <Grid item xs={6} md={3}>
+                            <Box sx={{ textAlign: "center" }}>
+                              <Typography variant="h4" color="primary">
+                                {stats.completedAchievements}
+                              </Typography>
+                              <Typography variant="body2" color="textSecondary">
+                                Получено
+                              </Typography>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={6} md={3}>
+                            <Box sx={{ textAlign: "center" }}>
+                              <Typography variant="h4" color="primary">
+                                {stats.totalAchievements}
+                              </Typography>
+                              <Typography variant="body2" color="textSecondary">
+                                Всего
+                              </Typography>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={6} md={3}>
+                            <Box sx={{ textAlign: "center" }}>
+                              <Typography variant="h4" color="secondary">
+                                {stats.earnedPoints}
+                              </Typography>
+                              <Typography variant="body2" color="textSecondary">
+                                Очки
+                              </Typography>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={6} md={3}>
+                            <Box sx={{ textAlign: "center" }}>
+                              <Typography variant="h4" color="success.main">
+                                {Math.round(stats.completionRate)}%
+                              </Typography>
+                              <Typography variant="body2" color="textSecondary">
+                                Прогресс
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        </Grid>
+                      </Paper>
+                    </Grid>
+                  )}
+                </Grid>{" "}
+                {/* Results Summary */}
+                {Array.isArray(achievements) && achievements.length > 0 && (
+                  <Box
+                    sx={{
+                      mb: 2,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Typography variant="body2" color="textSecondary">
+                      Показано {getFilteredAchievements().length} из{" "}
+                      {achievements.length} достижений
+                    </Typography>
+                    {(achievementFilter !== "all" ||
+                      categoryFilter !== "all" ||
+                      rarityFilter !== "all") && (
+                      <Button
+                        size="small"
+                        onClick={() => {
+                          setAchievementFilter("all");
+                          setCategoryFilter("all");
+                          setRarityFilter("all");
+                        }}
+                      >
+                        Сбросить все фильтры
+                      </Button>
+                    )}
+                  </Box>
+                )}
+                {/* Achievements Grid */}
+                <Grid container spacing={3}>
+                  {Array.isArray(achievements) &&
+                    getFilteredAchievements().map((achievement) => (
+                      <Grid item xs={12} md={4} key={achievement.id}>
+                        <Card
+                          sx={{
+                            textAlign: "center",
+                            p: 2,
+                            position: "relative",
+                            height: 312, // Фиксированная высота для всех карточек
+                            minWidth: 310, // Минимальная ширина для всех карточек
+                            display: "flex",
+                            flexDirection: "column",
+                            backgroundColor: achievement.isCompleted
+                              ? "rgba(46, 125, 50, 0.05)"
+                              : "rgba(158, 158, 158, 0.05)",
+                            borderLeft: achievement.isCompleted
+                              ? "4px solid #2e7d32"
+                              : "4px solid #9e9e9e",
+                          }}
+                        >
+                          <CardContent
+                            sx={{
+                              flexGrow: 1,
+                              display: "flex",
+                              flexDirection: "column",
+                            }}
+                          >
+                            {/* Иконка достижения - одинакового размера для всех */}
+                            <Box
+                              sx={{
+                                height: 80,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                mb: 1,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  fontSize: "60px",
+                                  filter: achievement.isCompleted
+                                    ? "none"
+                                    : "grayscale(100%)",
+                                  opacity: achievement.isCompleted ? 1 : 0.6,
+                                }}
+                              >
+                                {achievement.icon}
+                              </span>
+                            </Box>{" "}
+                            {/* Название достижения */}
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                mb: 1,
+                                color: achievement.isCompleted
+                                  ? "success.main"
+                                  : "text.secondary",
+                                fontWeight: achievement.isCompleted ? 600 : 400,
+                              }}
+                            >
+                              {achievement.name}
+                            </Typography>
+                            {/* Category and Rarity chips */}
+                            <Box
+                              sx={{
+                                mb: 2,
+                                display: "flex",
+                                gap: 1,
+                                justifyContent: "center",
+                                flexWrap: "wrap",
+                              }}
+                            >
+                              {" "}
+                              {achievement.category && (
+                                <Chip
+                                  label={translateCategory(
+                                    achievement.category
+                                  )}
+                                  size="small"
+                                  variant="outlined"
+                                  color="primary"
+                                />
+                              )}
+                              {achievement.rarity && (
+                                <Chip
+                                  label={translateRarity(achievement.rarity)}
+                                  size="small"
+                                  variant="outlined"
+                                  color={
+                                    achievement.rarity === "legendary"
+                                      ? "error"
+                                      : achievement.rarity === "epic"
+                                      ? "warning"
+                                      : achievement.rarity === "rare"
+                                      ? "info"
+                                      : "default"
+                                  }
+                                />
+                              )}
+                            </Box>
+                            {/* Описание достижения */}
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                mb: 2,
+                                flexGrow: 1,
+                                color: achievement.isCompleted
+                                  ? "text.primary"
+                                  : "text.secondary",
+                              }}
+                            >
+                              {achievement.description}
+                            </Typography>
+                            {/* Статус и прогресс */}
+                            <Box sx={{ mt: "auto" }}>
+                              {achievement.isCompleted ? (
+                                <>
+                                  <Chip
+                                    label={`Получено! +${achievement.points} очков`}
+                                    color="success"
+                                    size="small"
+                                    sx={{ mb: 1 }}
+                                  />
+                                  {achievement.earnedAt && (
+                                    <Typography
+                                      variant="caption"
+                                      color="success.main"
+                                      display="block"
+                                    >
+                                      {" "}
+                                      {new Date(
+                                        achievement.earnedAt
+                                      ).toLocaleDateString()}
+                                    </Typography>
+                                  )}
+                                </>
+                              ) : (
+                                <>
+                                  <Chip
+                                    label={`${achievement.progress.current}/${achievement.progress.target}`}
+                                    color="default"
+                                    size="small"
+                                    sx={{ mb: 1 }}
+                                  />
+                                  <LinearProgress
+                                    variant="determinate"
+                                    value={achievement.percentage || 0}
+                                    sx={{
+                                      mt: 1,
+                                      borderRadius: 1,
+                                      "& .MuiLinearProgress-bar": {
+                                        backgroundColor:
+                                          achievement.percentage > 50
+                                            ? "warning.main"
+                                            : "info.main",
+                                      },
+                                    }}
+                                  />
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ mt: 0.5, display: "block" }}
+                                  >
+                                    {achievement.percentage}% завершено
+                                  </Typography>
+                                </>
+                              )}
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    ))}
+                </Grid>{" "}
+                {achievementsError && (
+                  <Alert severity="warning" sx={{ mt: 3 }}>
+                    {achievementsError}
+                  </Alert>
+                )}
+                {/* Empty state for no achievements at all */}
+                {Array.isArray(achievements) &&
+                  achievements.length === 0 &&
+                  !achievementsLoading && (
+                    <Box sx={{ textAlign: "center", p: 4 }}>
+                      <EmojiEvents
+                        sx={{ fontSize: 60, color: "grey.400", mb: 2 }}
+                      />
+                      <Typography variant="h6" color="textSecondary">
+                        Достижения пока не загружены
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Начните использовать приложение, чтобы получить свои
+                        первые достижения!
+                      </Typography>
+                    </Box>
+                  )}
+                {/* Empty state for filtered out achievements */}
+                {Array.isArray(achievements) &&
+                  achievements.length > 0 &&
+                  getFilteredAchievements().length === 0 &&
+                  !achievementsLoading && (
+                    <Box sx={{ textAlign: "center", p: 4 }}>
+                      <FilterList
+                        sx={{ fontSize: 60, color: "grey.400", mb: 2 }}
+                      />
+                      <Typography variant="h6" color="textSecondary">
+                        Нет достижений по выбранным фильтрам
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Попробуйте изменить условия фильтрации
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        sx={{ mt: 2 }}
+                        onClick={() => {
+                          setAchievementFilter("all");
+                          setCategoryFilter("all");
+                          setRarityFilter("all");
+                        }}
+                      >
+                        Сбросить фильтры
+                      </Button>
+                    </Box>
+                  )}
+              </>
+            )}
           </TabPanel>
           {/* Security Tab */}
           <TabPanel value={tabValue} index={3}>
@@ -877,35 +1509,121 @@ export default function ProfilePage() {
           </TabPanel>{" "}
           {/* History Tab */}
           <TabPanel value={tabValue} index={4}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  История активности
-                </Typography>
-                <List>
-                  {activityHistory.map((activity, index) => (
-                    <React.Fragment key={activity.id}>
-                      <ListItem>
-                        <ListItemText
-                          primary={activity.action}
-                          secondary={activity.date}
-                        />
-                        <Chip
-                          label={
-                            activity.status === "success" ? "Успешно" : "Ошибка"
-                          }
-                          color={
-                            activity.status === "success" ? "success" : "error"
-                          }
-                          size="small"
-                        />
-                      </ListItem>
-                      {index < activityHistory.length - 1 && <Divider />}
-                    </React.Fragment>
-                  ))}
-                </List>
-              </CardContent>
-            </Card>
+            {activityLoading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+                <LinearProgress sx={{ width: "100%" }} />
+              </Box>
+            ) : (
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    История активности
+                  </Typography>{" "}
+                  {Array.isArray(activities) && activities.length > 0 ? (
+                    <>
+                      {/* Activity Summary */}
+                      <Box
+                        sx={{
+                          mb: 2,
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Typography variant="body2" color="textSecondary">
+                          Показано {getPaginatedActivities().length} из{" "}
+                          {activities.length} записей
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          Страница {activityPage} из {getTotalActivityPages()}
+                        </Typography>
+                      </Box>
+
+                      <List>
+                        {getPaginatedActivities().map((activity, index) => (
+                          <React.Fragment key={activity.id}>
+                            <ListItem>
+                              <ListItemIcon>
+                                {activity.status === "success" && (
+                                  <EmojiEvents color="success" />
+                                )}
+                                {activity.status === "info" && (
+                                  <Assignment color="info" />
+                                )}
+                                {activity.status === "warning" && (
+                                  <Security color="warning" />
+                                )}
+                                {activity.status === "default" && (
+                                  <History color="action" />
+                                )}
+                              </ListItemIcon>
+                              <ListItemText
+                                primary={activity.description}
+                                secondary={new Date(
+                                  activity.date
+                                ).toLocaleString("ru-RU", {
+                                  year: "numeric",
+                                  month: "long",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              />
+                              <Chip
+                                label={getStatusLabel(activity.status)}
+                                color={getStatusColor(activity.status)}
+                                size="small"
+                              />
+                            </ListItem>
+                            {index < getPaginatedActivities().length - 1 && (
+                              <Divider />
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </List>
+
+                      {/* Pagination */}
+                      {getTotalActivityPages() > 1 && (
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "center",
+                            mt: 3,
+                          }}
+                        >
+                          <Pagination
+                            count={getTotalActivityPages()}
+                            page={activityPage}
+                            onChange={handleActivityPageChange}
+                            color="primary"
+                            size="large"
+                            showFirstButton
+                            showLastButton
+                          />
+                        </Box>
+                      )}
+                    </>
+                  ) : (
+                    <Box sx={{ textAlign: "center", p: 4 }}>
+                      <History
+                        sx={{ fontSize: 60, color: "grey.400", mb: 2 }}
+                      />
+                      <Typography variant="h6" color="textSecondary">
+                        История активности пуста
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Ваши действия в системе будут отображаться здесь
+                      </Typography>
+                    </Box>
+                  )}
+                  {activityError && (
+                    <Alert severity="warning" sx={{ mt: 2 }}>
+                      {activityError}
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </TabPanel>
           {/* Settings Tab */}
           <TabPanel value={tabValue} index={5}>

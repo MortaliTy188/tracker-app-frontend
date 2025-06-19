@@ -5,3 +5,6 @@ export { useProfile } from "./useProfile";
 export { useFeedback } from "./useFeedback";
 export { useSnackbar } from "./useSnackbar";
 export { useLastVisit } from "./useLastVisit";
+export { useAchievements } from "./useAchievements";
+export { useActivity } from "./useActivity";
+export { useSkills } from "./useSkills";
