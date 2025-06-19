@@ -8,6 +8,8 @@ import {
   useAchievements,
   useActivity,
   useSkills,
+  useNotes,
+  useTopics,
 } from "../hooks";
 import {
   Box,
@@ -70,6 +72,7 @@ import {
   FilterList,
   CheckCircle,
   RadioButtonUnchecked,
+  Notes,
 } from "@mui/icons-material";
 import Navbar from "../components/Navbar";
 import { getAvatarUrl } from "../utils/avatarUtils";
@@ -192,10 +195,18 @@ export default function ProfilePage() {
   const [achievementFilter, setAchievementFilter] = useState("all"); // all, completed, incomplete
   const [categoryFilter, setCategoryFilter] = useState("all"); // all, specific category
   const [rarityFilter, setRarityFilter] = useState("all"); // all, common, uncommon, rare, epic, legendary
-
   // States for activity history pagination
   const [activityPage, setActivityPage] = useState(1);
   const activityItemsPerPage = 10;
+
+  // States for notes modal
+  const [noteDialog, setNoteDialog] = useState(false);
+  const [editingNote, setEditingNote] = useState(null);
+  const [noteForm, setNoteForm] = useState({
+    title: "",
+    content: "",
+    topic_id: "",
+  });
 
   const { getPreviousVisit } = useLastVisit();
 
@@ -251,7 +262,53 @@ export default function ProfilePage() {
     getCompletedSkills,
     getInProgressSkills,
     getOverallProgress,
-  } = useSkills();
+  } = useSkills(); // Notes hook
+  const {
+    notes,
+    notesStats,
+    pagination: notesPagination,
+    isLoading: notesLoading,
+    error: notesError,
+    searchTerm: notesSearch,
+    setSearchTerm: setNotesSearch,
+    sortBy: notesSortBy,
+    setSortBy: setNotesSortBy,
+    sortOrder: notesSortOrder,
+    setSortOrder: setNotesSortOrder,
+    currentPage: notesCurrentPage,
+    setCurrentPage: setNotesCurrentPage,
+    itemsPerPage: notesPerPage,
+    filteredNotes,
+    paginatedNotes,
+    loadNotes,
+    loadNotesStats,
+    createNewNote,
+    updateExistingNote,
+    deleteExistingNote,
+    searchNotes,
+    getNotesByPeriod,
+    getRecentNotes,
+  } = useNotes();
+
+  // Topics hook
+  const {
+    topics,
+    isLoading: topicsLoading,
+    error: topicsError,
+    loadTopics,
+    getTopicsBySkill,
+    getTopicById,
+  } = useTopics();
+
+  // Debug information for topics
+  console.log(
+    "Topics in ProfilePage:",
+    topics,
+    "Loading:",
+    topicsLoading,
+    "Error:",
+    topicsError
+  );
 
   // Form for profile editing
   const {
@@ -434,10 +491,84 @@ export default function ProfilePage() {
     }
     return Math.ceil(activities.length / activityItemsPerPage);
   };
-
   // Handle activity page change
   const handleActivityPageChange = (event, newPage) => {
     setActivityPage(newPage);
+  };
+
+  // Handle note dialog
+  const handleOpenNoteDialog = (note = null) => {
+    if (note) {
+      setEditingNote(note);
+      setNoteForm({
+        title: note.title,
+        content: note.content,
+        topic_id: note.topic_id || "",
+      });
+    } else {
+      setEditingNote(null);
+      setNoteForm({ title: "", content: "", topic_id: "" });
+    }
+    setNoteDialog(true);
+  };
+
+  const handleCloseNoteDialog = () => {
+    setNoteDialog(false);
+    setEditingNote(null);
+    setNoteForm({ title: "", content: "", topic_id: "" });
+  };
+  const handleSaveNote = async () => {
+    if (
+      !noteForm.title.trim() ||
+      !noteForm.content.trim() ||
+      !noteForm.topic_id
+    ) {
+      showError(
+        "Заполните все обязательные поля: название, содержание и выберите топик"
+      );
+      return;
+    }
+
+    try {
+      if (editingNote) {
+        // Редактируем существующую заметку
+        const result = await updateExistingNote(editingNote.id, noteForm);
+        if (result.success) {
+          showSuccess("Заметка успешно обновлена");
+          handleCloseNoteDialog();
+        } else {
+          showError(result.message || "Не удалось обновить заметку");
+        }
+      } else {
+        // Создаем новую заметку
+        const result = await createNewNote(noteForm);
+        if (result.success) {
+          showSuccess("Заметка успешно создана");
+          handleCloseNoteDialog();
+        } else {
+          showError(result.message || "Не удалось создать заметку");
+        }
+      }
+    } catch (error) {
+      showError("Произошла ошибка при сохранении заметки");
+      console.error("Error saving note:", error);
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    if (window.confirm("Вы уверены, что хотите удалить эту заметку?")) {
+      try {
+        const result = await deleteExistingNote(noteId);
+        if (result.success) {
+          showSuccess("Заметка успешно удалена");
+        } else {
+          showError(result.message || "Не удалось удалить заметку");
+        }
+      } catch (error) {
+        showError("Произошла ошибка при удалении заметки");
+        console.error("Error deleting note:", error);
+      }
+    }
   };
 
   useEffect(() => {
@@ -472,9 +603,7 @@ export default function ProfilePage() {
       } catch (error) {
         console.error("Error loading activity:", error);
       }
-    };
-
-    // Load skills data
+    }; // Load skills data
     const loadSkillsData = async () => {
       try {
         await loadSkills();
@@ -482,13 +611,42 @@ export default function ProfilePage() {
       } catch (error) {
         console.error("Error loading skills:", error);
       }
+    }; // Load notes data
+    const loadNotesData = async () => {
+      try {
+        await loadNotes();
+        // Временно отключаем loadNotesStats, чтобы использовать локальное вычисление
+        // await loadNotesStats();
+      } catch (error) {
+        console.error("Error loading notes:", error);
+      }
     };
 
+    // Load topics data
+    const loadTopicsData = async () => {
+      try {
+        await loadTopics();
+      } catch (error) {
+        console.error("Error loading topics:", error);
+      }
+    };
     loadUserProfile();
     loadAchievementsData();
     loadActivityData();
     loadSkillsData();
-  }, [loadAchievements, loadStats, loadActivity, loadSkills, loadSkillsStats]);
+    loadNotesData();
+    loadTopicsData();
+  }, [
+    loadAchievements,
+    loadStats,
+    loadActivity,
+    loadSkills,
+    loadSkillsStats,
+    loadNotes,
+    loadTopics,
+    // Временно убираем loadNotesStats из зависимостей
+    // loadNotesStats,
+  ]);
 
   if (!isAuthenticated()) {
     return (
@@ -581,9 +739,9 @@ export default function ProfilePage() {
               <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mt: 1 }}>
                 {" "}
                 <Chip
-                  label={`В системе с ${new Date(
+                  label={`В системе с ${formatSafeDate(
                     userProfile.user.registrationDate
-                  ).toLocaleDateString()}`}
+                  )}`}
                   color="primary"
                   variant="outlined"
                   size="small"
@@ -625,8 +783,10 @@ export default function ProfilePage() {
               variant="scrollable"
               scrollButtons="auto"
             >
+              {" "}
               <Tab label="Профиль" icon={<Person />} />
               <Tab label="Навыки" icon={<TrendingUp />} />
+              <Tab label="Заметки" icon={<Notes />} />
               <Tab label="Достижения" icon={<EmojiEvents />} />
               <Tab label="Безопасность" icon={<Security />} />
               <Tab label="История" icon={<History />} />
@@ -1013,10 +1173,292 @@ export default function ProfilePage() {
                   </Alert>
                 )}
               </>
-            )}
+            )}{" "}
           </TabPanel>{" "}
-          {/* Achievements Tab - Dynamic */}
+          {/* Notes Tab - Dynamic */}
           <TabPanel value={tabValue} index={2}>
+            {notesLoading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+                <LinearProgress sx={{ width: "100%" }} />
+              </Box>
+            ) : (
+              <>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 3,
+                  }}
+                >
+                  <Typography variant="h5" gutterBottom>
+                    📝 Ваши заметки
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<Notes />}
+                    onClick={() => handleOpenNoteDialog()}
+                    sx={{ ml: 2 }}
+                  >
+                    Добавить заметку
+                  </Button>
+                </Box>
+
+                {/* Statistics Section */}
+                <Grid container spacing={3} sx={{ mb: 3 }}>
+                  <Grid item xs={12} md={3}>
+                    <Card sx={{ textAlign: "center", p: 2 }}>
+                      <CardContent>
+                        <Typography variant="h4" color="primary">
+                          {notesStats.total || 0}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Всего заметок
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <Card sx={{ textAlign: "center", p: 2 }}>
+                      <CardContent>
+                        <Typography variant="h4" color="success.main">
+                          {notesStats.thisWeek || 0}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          На этой неделе
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <Card sx={{ textAlign: "center", p: 2 }}>
+                      <CardContent>
+                        <Typography variant="h4" color="warning.main">
+                          {notesStats.thisMonth || 0}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          В этом месяце
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <Card sx={{ textAlign: "center", p: 2 }}>
+                      <CardContent>
+                        <Typography variant="h4" color="info.main">
+                          {Math.round(notesStats.averageLength || 0)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Средняя длина
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+
+                {/* Search and Filter Section */}
+                <Paper sx={{ p: 3, mb: 3 }}>
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Поиск по заметкам"
+                        variant="outlined"
+                        value={notesSearch}
+                        onChange={(e) => setNotesSearch(e.target.value)}
+                        placeholder="Введите ключевые слова..."
+                        InputProps={{
+                          startAdornment: (
+                            <FilterList
+                              sx={{ mr: 1, color: "action.active" }}
+                            />
+                          ),
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={3}>
+                      <FormControl fullWidth>
+                        <InputLabel>Сортировка</InputLabel>
+                        <Select
+                          value={notesSortBy}
+                          label="Сортировка"
+                          onChange={(e) => setNotesSortBy(e.target.value)}
+                        >
+                          <MenuItem value="date">По дате</MenuItem>
+                          <MenuItem value="title">По названию</MenuItem>
+                          <MenuItem value="length">По длине</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} md={3}>
+                      <ToggleButtonGroup
+                        value={notesSortOrder}
+                        exclusive
+                        onChange={(e, newOrder) =>
+                          newOrder && setNotesSortOrder(newOrder)
+                        }
+                        size="small"
+                        fullWidth
+                      >
+                        <ToggleButton value="desc">Убывание</ToggleButton>
+                        <ToggleButton value="asc">Возрастание</ToggleButton>
+                      </ToggleButtonGroup>
+                    </Grid>
+                  </Grid>
+                </Paper>
+
+                {/* Notes List */}
+                {notesError ? (
+                  <Alert severity="error" sx={{ mb: 3 }}>
+                    Ошибка загрузки заметок: {notesError}
+                  </Alert>
+                ) : filteredNotes.length === 0 ? (
+                  <Paper sx={{ p: 4, textAlign: "center" }}>
+                    <Notes
+                      sx={{ fontSize: 64, color: "text.secondary", mb: 2 }}
+                    />
+                    <Typography
+                      variant="h6"
+                      color="text.secondary"
+                      gutterBottom
+                    >
+                      {notesSearch
+                        ? "Заметки не найдены"
+                        : "У вас пока нет заметок"}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {notesSearch
+                        ? "Попробуйте изменить критерии поиска"
+                        : "Создайте первую заметку, чтобы начать отслеживать свои мысли и идеи"}
+                    </Typography>
+                  </Paper>
+                ) : (
+                  <>
+                    <Grid container spacing={3}>
+                      {paginatedNotes.map((note) => (
+                        <Grid item xs={12} md={6} key={note.id}>
+                          <Card
+                            sx={{
+                              height: "100%",
+                              display: "flex",
+                              flexDirection: "column",
+                            }}
+                          >
+                            <CardContent sx={{ flexGrow: 1 }}>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "start",
+                                  mb: 2,
+                                }}
+                              >
+                                <Typography
+                                  variant="h6"
+                                  component="h3"
+                                  sx={{ flexGrow: 1, mr: 2 }}
+                                >
+                                  {note.title}
+                                </Typography>{" "}
+                                <Chip
+                                  size="small"
+                                  label={formatSafeDate(
+                                    note.created_at || note.createdAt
+                                  )}
+                                  variant="outlined"
+                                />
+                              </Box>{" "}
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ mb: 2 }}
+                              >
+                                {note.content && note.content.length > 150
+                                  ? `${note.content.substring(0, 150)}...`
+                                  : note.content || "Нет содержания"}
+                              </Typography>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
+                                {" "}
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  {note.content ? note.content.length : 0}{" "}
+                                  символов
+                                </Typography>
+                                {note.topic && (
+                                  <Box sx={{ display: "flex", gap: 0.5 }}>
+                                    <Chip
+                                      label={note.topic.name}
+                                      size="small"
+                                      color="primary"
+                                      variant="outlined"
+                                    />
+                                    {note.topic.skill && (
+                                      <Chip
+                                        label={note.topic.skill.name}
+                                        size="small"
+                                        color="secondary"
+                                        variant="outlined"
+                                      />
+                                    )}
+                                  </Box>
+                                )}
+                              </Box>
+                            </CardContent>{" "}
+                            <CardActions>
+                              <Button
+                                size="small"
+                                startIcon={<Edit />}
+                                onClick={() => handleOpenNoteDialog(note)}
+                              >
+                                Редактировать
+                              </Button>
+                              <Button
+                                size="small"
+                                color="error"
+                                onClick={() => handleDeleteNote(note.id)}
+                              >
+                                Удалить
+                              </Button>
+                            </CardActions>
+                          </Card>
+                        </Grid>
+                      ))}
+                    </Grid>{" "}
+                    {/* Pagination */}
+                    {filteredNotes.length > notesPerPage && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "center",
+                          mt: 4,
+                        }}
+                      >
+                        <Pagination
+                          count={Math.ceil(filteredNotes.length / notesPerPage)}
+                          page={notesCurrentPage}
+                          onChange={(e, page) => setNotesCurrentPage(page)}
+                          color="primary"
+                          size="large"
+                          showFirstButton
+                          showLastButton
+                        />
+                      </Box>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </TabPanel>
+          {/* Achievements Tab - Dynamic */}
+          <TabPanel value={tabValue} index={3}>
             {achievementsLoading ? (
               <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
                 <LinearProgress sx={{ width: "100%" }} />
@@ -1358,7 +1800,7 @@ export default function ProfilePage() {
                                     color="success"
                                     size="small"
                                     sx={{ mb: 1 }}
-                                  />
+                                  />{" "}
                                   {achievement.earnedAt && (
                                     <Typography
                                       variant="caption"
@@ -1366,9 +1808,7 @@ export default function ProfilePage() {
                                       display="block"
                                     >
                                       {" "}
-                                      {new Date(
-                                        achievement.earnedAt
-                                      ).toLocaleDateString()}
+                                      {formatSafeDate(achievement.earnedAt)}
                                     </Typography>
                                   )}
                                 </>
@@ -1461,9 +1901,9 @@ export default function ProfilePage() {
                   )}
               </>
             )}
-          </TabPanel>
+          </TabPanel>{" "}
           {/* Security Tab */}
-          <TabPanel value={tabValue} index={3}>
+          <TabPanel value={tabValue} index={4}>
             <Grid
               container
               spacing={3}
@@ -1508,7 +1948,7 @@ export default function ProfilePage() {
             </Grid>
           </TabPanel>{" "}
           {/* History Tab */}
-          <TabPanel value={tabValue} index={4}>
+          <TabPanel value={tabValue} index={5}>
             {activityLoading ? (
               <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
                 <LinearProgress sx={{ width: "100%" }} />
@@ -1624,9 +2064,9 @@ export default function ProfilePage() {
                 </CardContent>
               </Card>
             )}
-          </TabPanel>
+          </TabPanel>{" "}
           {/* Settings Tab */}
-          <TabPanel value={tabValue} index={5}>
+          <TabPanel value={tabValue} index={6}>
             <Grid
               container
               spacing={3}
@@ -1739,6 +2179,85 @@ export default function ProfilePage() {
             >
               Изменить пароль
             </Button>
+          </DialogActions>{" "}
+        </Dialog>
+        {/* Note Creation/Edit Dialog */}
+        <Dialog
+          open={noteDialog}
+          onClose={handleCloseNoteDialog}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            {editingNote ? "Редактировать заметку" : "Создать новую заметку"}
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ mt: 2 }}>
+              <TextField
+                fullWidth
+                label="Название заметки"
+                value={noteForm.title}
+                onChange={(e) =>
+                  setNoteForm((prev) => ({ ...prev, title: e.target.value }))
+                }
+                margin="normal"
+                required
+              />
+              <TextField
+                fullWidth
+                label="Содержание заметки"
+                value={noteForm.content}
+                onChange={(e) =>
+                  setNoteForm((prev) => ({ ...prev, content: e.target.value }))
+                }
+                margin="normal"
+                multiline
+                rows={6}
+                required
+              />
+              <FormControl fullWidth margin="normal" required>
+                <InputLabel>Топик</InputLabel>{" "}
+                <Select
+                  value={noteForm.topic_id}
+                  label="Топик"
+                  onChange={(e) =>
+                    setNoteForm((prev) => ({
+                      ...prev,
+                      topic_id: e.target.value,
+                    }))
+                  }
+                  disabled={topicsLoading}
+                >
+                  {topicsLoading ? (
+                    <MenuItem disabled>Загрузка топиков...</MenuItem>
+                  ) : topicsError ? (
+                    <MenuItem disabled>Ошибка загрузки топиков</MenuItem>
+                  ) : topics.length === 0 ? (
+                    <MenuItem disabled>Нет доступных топиков</MenuItem>
+                  ) : (
+                    topics.map((topic) => (
+                      <MenuItem key={topic.id} value={topic.id}>
+                        {topic.name} ({topic.skill?.name})
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseNoteDialog}>Отмена</Button>{" "}
+            <Button
+              onClick={handleSaveNote}
+              variant="contained"
+              disabled={
+                !noteForm.title.trim() ||
+                !noteForm.content.trim() ||
+                !noteForm.topic_id
+              }
+            >
+              {editingNote ? "Обновить" : "Создать"}
+            </Button>
           </DialogActions>
         </Dialog>
         {/* Snackbar for notifications */}
@@ -1760,3 +2279,23 @@ export default function ProfilePage() {
     </Box>
   );
 }
+
+/**
+ * Безопасное форматирование даты
+ * @param {string|Date} dateValue - Значение даты
+ * @returns {string} Отформатированная дата или "Неизвестно"
+ */
+const formatSafeDate = (dateValue) => {
+  if (!dateValue) return "Неизвестно";
+
+  try {
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) {
+      return "Неизвестно";
+    }
+    return date.toLocaleDateString("ru-RU");
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "Неизвестно";
+  }
+};

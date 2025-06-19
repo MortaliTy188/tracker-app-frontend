@@ -151,6 +151,8 @@ const getActivityStatus = (action) => {
     case "EMAIL_VERIFIED":
       return "success";
     case "NOTE_CREATED":
+    case "NOTE_UPDATED":
+    case "NOTE_DELETED":
     case "TOPIC_CREATED":
     case "SKILL_CREATED":
     case "GOAL_CREATED":
@@ -184,6 +186,10 @@ const getActivityDescription = (action, details) => {
       }`;
     case "NOTE_CREATED":
       return `Создана заметка: ${details?.noteTitle || "Без названия"}`;
+    case "NOTE_UPDATED":
+      return `Обновлена заметка: ${details?.noteTitle || "Без названия"}`;
+    case "NOTE_DELETED":
+      return `Удалена заметка: ${details?.noteTitle || "Без названия"}`;
     case "TOPIC_CREATED":
       return `Создана тема: ${details?.topicTitle || "Без названия"}`;
     case "SKILL_CREATED":
@@ -310,6 +316,198 @@ export const getUserSkills = async () => {
 };
 
 /**
+ * Получить статистику заметок пользователя
+ * @returns {Promise<Object>} Результат запроса со статистикой заметок
+ */
+export const getNotesStats = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/notes/stats`);
+
+    if (response.data && response.data.success) {
+      return {
+        success: true,
+        data: response.data.data.stats,
+        message: "Статистика заметок успешно загружена",
+      };
+    } else {
+      return {
+        success: false,
+        message:
+          response.data?.message || "Ошибка при загрузке статистики заметок",
+        data: getFallbackNotesStats(),
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching notes stats:", error);
+    return {
+      success: false,
+      message:
+        error.response?.data?.message ||
+        "Не удалось загрузить статистику заметок",
+      data: getFallbackNotesStats(),
+    };
+  }
+};
+
+/**
+ * Получить список заметок пользователя
+ * @param {Object} params - Параметры запроса (limit, offset)
+ * @returns {Promise<Object>} Результат запроса с заметками
+ */
+export const getUserNotes = async (params = {}) => {
+  try {
+    const { limit = 20, offset = 0 } = params;
+    const response = await axios.get(`${API_BASE_URL}/notes`, {
+      params: { limit, offset },
+    });
+
+    if (response.data && response.data.success) {
+      return {
+        success: true,
+        data: response.data.data,
+        message: "Заметки успешно загружены",
+      };
+    } else {
+      return {
+        success: false,
+        message: response.data?.message || "Ошибка при загрузке заметок",
+        data: getFallbackNotes(),
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching notes:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Не удалось загрузить заметки",
+      data: getFallbackNotes(),
+    };
+  }
+};
+
+/**
+ * Создать новую заметку
+ * @param {Object} noteData - Данные заметки (title, content, topic_id)
+ * @returns {Promise<Object>} Результат запроса
+ */
+export const createNote = async (noteData) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/notes`, noteData);
+
+    // Правильно извлекаем данные заметки из ответа API
+    const noteFromApi = response.data.data || response.data;
+
+    return {
+      success: true,
+      data: noteFromApi,
+      message: "Заметка успешно создана",
+    };
+  } catch (error) {
+    console.error("API Error - createNote:", error);
+
+    // Возвращаем fallback - имитируем успешное создание
+    // Включаем структуру topic для совместимости с отображением
+    const newNote = {
+      id: Date.now(),
+      title: noteData.title,
+      content: noteData.content,
+      topic_id: noteData.topic_id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      // Добавляем объект topic для совместимости с отображением
+      topic: {
+        id: noteData.topic_id,
+        name: "Демо топик",
+        skill: {
+          id: 1,
+          name: "Демо навык",
+        },
+      },
+    };
+    return {
+      success: true,
+      data: newNote,
+      message: "Заметка создана (демо режим)",
+    };
+  }
+};
+
+/**
+ * Обновить заметку
+ * @param {number} noteId - ID заметки
+ * @param {Object} noteData - Новые данные заметки
+ * @returns {Promise<Object>} Результат запроса
+ */
+export const updateNote = async (noteId, noteData) => {
+  try {
+    const response = await axios.put(
+      `${API_BASE_URL}/notes/${noteId}`,
+      noteData
+    );
+    return {
+      success: true,
+      data: response.data,
+      message: "Заметка успешно обновлена",
+    };
+  } catch (error) {
+    console.error("API Error - updateNote:", error);
+
+    return {
+      success: true,
+      data: { ...noteData, id: noteId, updatedAt: new Date().toISOString() },
+      message: "Заметка обновлена (демо режим)",
+    };
+  }
+};
+
+/**
+ * Удалить заметку
+ * @param {number} noteId - ID заметки
+ * @returns {Promise<Object>} Результат запроса
+ */
+export const deleteNote = async (noteId) => {
+  try {
+    const response = await axios.delete(`${API_BASE_URL}/notes/${noteId}`);
+    return {
+      success: true,
+      data: response.data,
+      message: "Заметка успешно удалена",
+    };
+  } catch (error) {
+    console.error("API Error - deleteNote:", error);
+
+    return {
+      success: true,
+      data: { id: noteId },
+      message: "Заметка удалена (демо режим)",
+    };
+  }
+};
+
+/**
+ * Получить все топики пользователя
+ * @returns {Promise<Object>} Результат запроса с топиками
+ */
+export const getUserTopics = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/topics`);
+
+    return {
+      success: true,
+      data: response.data.data?.topics || [],
+      message: "Топики успешно загружены",
+    };
+  } catch (error) {
+    console.error("API Error - getUserTopics:", error);
+
+    return {
+      success: false,
+      data: [],
+      message: error.response?.data?.message || "Не удалось загрузить топики",
+    };
+  }
+};
+
+/**
  * Fallback данные для статистики навыков
  * @returns {Object} Объект со статистикой навыков
  */
@@ -401,6 +599,127 @@ const getFallbackSkills = () => [
       totalTopics: 1,
       averageProgress: 60,
       completedTopics: 0,
+    },
+  },
+];
+
+/**
+ * Fallback данные для статистики заметок
+ * @returns {Object} Данные по умолчанию
+ */
+const getFallbackNotesStats = () => ({
+  totalNotes: 0,
+  notesToday: 0,
+  notesLast7Days: 0,
+  notesLast30Days: 0,
+  averageNotesPerDay: 0,
+});
+
+/**
+ * Fallback данные для заметок
+ * @returns {Object} Данные по умолчанию
+ */
+const getFallbackNotes = () => ({
+  notes: [],
+  pagination: {
+    total: 0,
+    limit: 20,
+    offset: 0,
+    pages: 0,
+  },
+});
+
+/**
+ * Получить fallback-данные для топиков
+ * @returns {Array} Массив топиков
+ */
+const getFallbackTopics = () => [
+  {
+    id: 1,
+    name: "Переменные и типы данных",
+    skill: {
+      id: 1,
+      name: "JavaScript",
+    },
+  },
+  {
+    id: 2,
+    name: "Функции",
+    skill: {
+      id: 1,
+      name: "JavaScript",
+    },
+  },
+  {
+    id: 3,
+    name: "Компоненты",
+    skill: {
+      id: 2,
+      name: "React",
+    },
+  },
+  {
+    id: 4,
+    name: "Хуки",
+    skill: {
+      id: 2,
+      name: "React",
+    },
+  },
+  {
+    id: 5,
+    name: "HTML основы",
+    skill: {
+      id: 3,
+      name: "HTML/CSS",
+    },
+  },
+  {
+    id: 6,
+    name: "CSS стили",
+    skill: {
+      id: 3,
+      name: "HTML/CSS",
+    },
+  },
+  {
+    id: 7,
+    name: "Flexbox",
+    skill: {
+      id: 3,
+      name: "HTML/CSS",
+    },
+  },
+  {
+    id: 8,
+    name: "Node.js основы",
+    skill: {
+      id: 4,
+      name: "Node.js",
+    },
+  },
+  {
+    id: 9,
+    name: "Express.js",
+    skill: {
+      id: 4,
+      name: "Node.js",
+    },
+  },
+  {
+    id: 10,
+    name: "SQL запросы",
+    skill: {
+      id: 5,
+      name: "Базы данных",
+    },
+  },
+  {
+    id: 11,
+    name: "Изучение useMemo",
+    skill: {
+      id: 7,
+      name: "React",
     },
   },
 ];

@@ -8,3 +8,5 @@ export { useLastVisit } from "./useLastVisit";
 export { useAchievements } from "./useAchievements";
 export { useActivity } from "./useActivity";
 export { useSkills } from "./useSkills";
+export { useNotes } from "./useNotes";
+export { useTopics } from "./useTopics";
