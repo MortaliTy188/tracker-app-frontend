@@ -10,3 +10,4 @@ export { useActivity } from "./useActivity";
 export { useSkills } from "./useSkills";
 export { useNotes } from "./useNotes";
 export { useTopics } from "./useTopics";
+export { useFriendship } from "./useFriendship";
