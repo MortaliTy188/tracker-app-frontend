@@ -2100,9 +2100,7 @@ export default function ProfilePage() {
                           mb: 2,
                         }}
                       >
-                        <Typography variant="h6">
-                          Список друзей ({friends.length})
-                        </Typography>
+                        <Typography variant="h6">Список друзей</Typography>
                         <Chip
                           label={`${friends.length} друзей`}
                           color="primary"
