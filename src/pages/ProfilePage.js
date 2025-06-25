@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   useAuth,
   useProfile,
@@ -205,6 +205,9 @@ export default function ProfilePage() {
   const [activityPage, setActivityPage] = useState(1);
   const activityItemsPerPage = 10;
 
+  // Constants for pagination
+  const USERS_PER_PAGE = 10;
+
   // States for notes modal
   const [noteDialog, setNoteDialog] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
@@ -213,6 +216,15 @@ export default function ProfilePage() {
     content: "",
     topic_id: "",
   });
+
+  // States for Find Friends modal
+  const [findFriendsModal, setFindFriendsModal] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState(null);
+  const [userSearch, setUserSearch] = useState("");
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersPagination, setUsersPagination] = useState(null);
 
   const { getPreviousVisit } = useLastVisit();
 
@@ -594,6 +606,94 @@ export default function ProfilePage() {
     }
   };
 
+  // Fetch all users for Find Friends
+  const fetchAllUsers = useCallback(async () => {
+    const API_BASE_URL =
+      process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
+    console.log(
+      "🔧 DEBUG: API Base URL from env:",
+      process.env.REACT_APP_API_BASE_URL
+    );
+
+    setUsersLoading(true);
+    setUsersError(null);
+
+    try {
+      const token = localStorage.getItem("token");
+      const url = `${API_BASE_URL}/api/users/all`;
+
+      console.log("Fetching users from:", url);
+      console.log("Token available:", !!token);
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("Response status:", response.status);
+      console.log("Response headers:", response.headers);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Server error response:", errorText);
+        throw new Error(`Ошибка ${response.status}: ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const responseText = await response.text();
+        console.error("Non-JSON response:", responseText);
+        throw new Error("Сервер вернул некорректный формат данных");
+      }
+
+      const data = await response.json();
+      console.log("Received data:", data);
+      setAllUsers(data.data?.users || data.users || []);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      setUsersError(error.message || "Не удалось загрузить пользователей");
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
+  // Search users by name
+  const handleUserSearch = useCallback((e) => {
+    setUserSearch(e.target.value);
+    setUsersPage(1); // Сбросить страницу поиска при новом запросе
+  }, []);
+
+  // Filter users based on search
+  const filteredUsers = useCallback(() => {
+    if (!userSearch.trim()) {
+      return allUsers;
+    }
+    return allUsers.filter((user) =>
+      user.name.toLowerCase().includes(userSearch.toLowerCase())
+    );
+  }, [allUsers, userSearch]);
+
+  // Paginate users
+  const paginatedUsers = useCallback(() => {
+    const filtered = filteredUsers();
+    const start = (usersPage - 1) * USERS_PER_PAGE;
+    const end = start + USERS_PER_PAGE;
+    return filtered.slice(start, end);
+  }, [filteredUsers, usersPage]);
+
+  // Total pages for users
+  const totalUsersPages = useCallback(() => {
+    return Math.ceil(filteredUsers().length / USERS_PER_PAGE);
+  }, [filteredUsers]);
+
+  // Handle page change for users
+  const handleUsersPageChange = useCallback((event, newPage) => {
+    setUsersPage(newPage);
+  }, []);
+
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
@@ -611,7 +711,9 @@ export default function ProfilePage() {
         console.error("Error loading profile:", error);
         showError("Не удалось загрузить данные профиля");
       }
-    }; // Load achievements data
+    };
+
+    // Load achievements data
     const loadAchievementsData = async () => {
       try {
         await loadAchievements();
@@ -619,14 +721,18 @@ export default function ProfilePage() {
       } catch (error) {
         console.error("Error loading achievements:", error);
       }
-    }; // Load activity data
+    };
+
+    // Load activity data
     const loadActivityData = async () => {
       try {
         await loadActivity();
       } catch (error) {
         console.error("Error loading activity:", error);
       }
-    }; // Load skills data
+    };
+
+    // Load skills data
     const loadSkillsData = async () => {
       try {
         await loadSkills();
@@ -634,7 +740,9 @@ export default function ProfilePage() {
       } catch (error) {
         console.error("Error loading skills:", error);
       }
-    }; // Load notes data
+    };
+
+    // Load notes data
     const loadNotesData = async () => {
       try {
         await loadNotes();
@@ -665,6 +773,7 @@ export default function ProfilePage() {
       }
     };
 
+    // Загружаем данные только один раз при монтировании компонента
     loadUserProfile();
     loadAchievementsData();
     loadActivityData();
@@ -672,20 +781,8 @@ export default function ProfilePage() {
     loadNotesData();
     loadTopicsData();
     loadFriendshipData();
-  }, [
-    loadAchievements,
-    loadStats,
-    loadActivity,
-    loadSkills,
-    loadSkillsStats,
-    loadNotes,
-    loadTopics,
-    loadFriends,
-    loadPendingRequests,
-    loadSentRequests,
-    // Временно убираем loadNotesStats из зависимостей
-    // loadNotesStats,
-  ]);
+    fetchAllUsers(); // Загрузка всех пользователей при монтировании
+  }, []); // Пустой массив зависимостей - выполнится только один раз при монтировании
 
   if (!isAuthenticated()) {
     return (
@@ -1191,12 +1288,12 @@ export default function ProfilePage() {
                         <CardContent sx={{ textAlign: "center", py: 6 }}>
                           <Typography
                             variant="h6"
-                            color="textSecondary"
+                            color="text.secondary"
                             gutterBottom
                           >
                             У вас пока нет навыков
                           </Typography>
-                          <Typography variant="body2" color="textSecondary">
+                          <Typography variant="body2" color="text.secondary">
                             Начните создавать навыки для отслеживания своего
                             прогресса
                           </Typography>
@@ -1955,16 +2052,25 @@ export default function ProfilePage() {
               <Typography variant="h5" gutterBottom>
                 👥 Мои друзья
               </Typography>
-              {pendingRequests.length > 0 && (
-                <Badge badgeContent={pendingRequests.length} color="warning">
-                  <Chip
-                    icon={<Notifications />}
-                    label="Новые запросы"
-                    color="warning"
-                    variant="outlined"
-                  />
-                </Badge>
-              )}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Button
+                  variant="contained"
+                  startIcon={<PersonAdd />}
+                  onClick={() => setFindFriendsModal(true)}
+                >
+                  Найти друзей
+                </Button>
+                {pendingRequests.length > 0 && (
+                  <Badge badgeContent={pendingRequests.length} color="warning">
+                    <Chip
+                      icon={<Notifications />}
+                      label="Новые запросы"
+                      color="warning"
+                      variant="outlined"
+                    />
+                  </Badge>
+                )}
+              </Box>
             </Box>
 
             {friendshipLoading ? (
@@ -2127,12 +2233,7 @@ export default function ProfilePage() {
                           <Button
                             variant="outlined"
                             startIcon={<PersonAdd />}
-                            onClick={() => {
-                              // Здесь можно добавить переход на страницу поиска пользователей
-                              showSuccess(
-                                "Функция поиска пользователей будет добавлена позже"
-                              );
-                            }}
+                            onClick={() => setFindFriendsModal(true)}
                           >
                             Найти друзей
                           </Button>
@@ -2640,6 +2741,246 @@ export default function ProfilePage() {
             >
               {editingNote ? "Обновить" : "Создать"}
             </Button>
+          </DialogActions>
+        </Dialog>
+        {/* Find Friends Dialog */}
+        <Dialog
+          open={findFriendsModal}
+          onClose={() => setFindFriendsModal(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>Найти друзей</DialogTitle>
+          <DialogContent>
+            <Box sx={{ mb: 2 }}>
+              <TextField
+                fullWidth
+                label="Поиск пользователей"
+                variant="outlined"
+                value={userSearch}
+                onChange={handleUserSearch}
+                placeholder="Введите имя или никнейм"
+                InputProps={{
+                  startAdornment: (
+                    <FilterList sx={{ mr: 1, color: "action.active" }} />
+                  ),
+                }}
+              />
+            </Box>
+
+            {/* Users List */}
+            {usersLoading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+                <LinearProgress sx={{ width: "100%" }} />
+              </Box>
+            ) : usersError ? (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                {usersError}
+              </Alert>
+            ) : (
+              <List>
+                {paginatedUsers().map((user) => (
+                  <ListItem
+                    key={user.id}
+                    sx={{
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      mb: 1,
+                      flexDirection: "column",
+                      alignItems: "stretch",
+                      p: 2,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        mb: 1,
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <Avatar
+                          src={user.avatar}
+                          sx={{ mr: 2, width: 50, height: 50 }}
+                        >
+                          {user.name.charAt(0)}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="h6">{user.name}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Уровень {user.level} •{" "}
+                            {new Date(user.registrationDate).toLocaleDateString(
+                              "ru-RU"
+                            )}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      {user.isPrivate && (
+                        <Chip
+                          label="Приватный профиль"
+                          size="small"
+                          color="warning"
+                          variant="outlined"
+                        />
+                      )}
+                    </Box>
+
+                    {/* Stats section */}
+                    <Box sx={{ mb: 2 }}>
+                      {user.isPrivate ? (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ fontStyle: "italic" }}
+                        >
+                          {user.stats?.message ||
+                            "Статистика скрыта пользователем"}
+                        </Typography>
+                      ) : (
+                        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                          {user.stats?.achievements && (
+                            <Chip
+                              label={`${user.stats.achievements.completed}/${user.stats.achievements.total} достижений`}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                            />
+                          )}
+                          {user.stats?.progress && (
+                            <Chip
+                              label={`${user.stats.progress.completedTopics}/${user.stats.progress.totalTopics} тем`}
+                              size="small"
+                              color="secondary"
+                              variant="outlined"
+                            />
+                          )}
+                          {user.stats?.achievements?.points && (
+                            <Chip
+                              label={`${user.stats.achievements.points} очков`}
+                              size="small"
+                              color="success"
+                              variant="outlined"
+                            />
+                          )}
+                        </Box>
+                      )}
+                    </Box>
+
+                    {/* Action button */}
+                    <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                      {user.friendship?.status === "none" && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<PersonAdd />}
+                          onClick={() => {
+                            sendFriendRequest(user.id).then((result) => {
+                              if (result.success) {
+                                showSuccess("Запрос на дружбу отправлен");
+                                fetchAllUsers(); // Обновить список пользователей
+                              } else {
+                                showError(result.message);
+                              }
+                            });
+                          }}
+                        >
+                          Добавить в друзья
+                        </Button>
+                      )}
+                      {user.friendship?.status === "sent_request" && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          disabled
+                          color="warning"
+                        >
+                          Запрос отправлен
+                        </Button>
+                      )}
+                      {user.friendship?.status === "received_request" && (
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            color="success"
+                            onClick={() => {
+                              acceptFriendRequest(
+                                user.friendship.friendshipId
+                              ).then((result) => {
+                                if (result.success) {
+                                  showSuccess("Запрос принят");
+                                  fetchAllUsers(); // Обновить список
+                                  loadFriends(); // Обновить список друзей
+                                  loadPendingRequests(); // Обновить входящие запросы
+                                } else {
+                                  showError(result.message);
+                                }
+                              });
+                            }}
+                          >
+                            Принять
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            color="error"
+                            onClick={() => {
+                              declineFriendRequest(
+                                user.friendship.friendshipId
+                              ).then((result) => {
+                                if (result.success) {
+                                  showSuccess("Запрос отклонен");
+                                  fetchAllUsers(); // Обновить список
+                                  loadPendingRequests(); // Обновить входящие запросы
+                                } else {
+                                  showError(result.message);
+                                }
+                              });
+                            }}
+                          >
+                            Отклонить
+                          </Button>
+                        </Box>
+                      )}
+                      {user.friendship?.status === "accepted" && (
+                        <Chip
+                          label="Уже друзья"
+                          size="small"
+                          color="success"
+                          icon={<Check />}
+                        />
+                      )}
+                    </Box>
+                  </ListItem>
+                ))}
+              </List>
+            )}
+
+            {/* Pagination for users */}
+            {totalUsersPages() > 1 && (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  mt: 2,
+                }}
+              >
+                <Pagination
+                  count={totalUsersPages()}
+                  page={usersPage}
+                  onChange={handleUsersPageChange}
+                  color="primary"
+                  size="large"
+                  showFirstButton
+                  showLastButton
+                />
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setFindFriendsModal(false)}>Закрыть</Button>
           </DialogActions>
         </Dialog>
         {/* Snackbar for notifications */}
