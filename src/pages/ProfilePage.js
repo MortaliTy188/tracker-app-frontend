@@ -157,6 +157,11 @@ const translateCategory = (category) => {
     level_reached: "Уровни",
     skills_created: "Создание навыков",
     streak_days: "Серии дней",
+    // Новые категории для дружбы
+    friends_added: "Дружба",
+    friend_requests_received: "Популярность",
+    friend_requests_sent: "Инициативность",
+    friendship_duration: "Длительная дружба",
     // Дополнительные возможные категории
     learning: "Обучение",
     progress: "Прогресс",
