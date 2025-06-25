@@ -80,6 +80,7 @@ import {
   Check,
   Close,
   Message,
+  GroupAdd,
 } from "@mui/icons-material";
 import Navbar from "../components/Navbar";
 import { getAvatarUrl } from "../utils/avatarUtils";
@@ -97,6 +98,8 @@ const getStatusLabel = (status) => {
       return "Информация";
     case "warning":
       return "Изменение";
+    case "friendship":
+      return "Дружба";
     case "default":
       return "Событие";
     default:
@@ -117,6 +120,8 @@ const getStatusColor = (status) => {
       return "info";
     case "warning":
       return "warning";
+    case "friendship":
+      return "secondary";
     case "default":
       return "default";
     default:
@@ -2527,7 +2532,19 @@ export default function ProfilePage() {
                                 {activity.status === "warning" && (
                                   <Security color="warning" />
                                 )}
+                                {activity.status === "friendship" && (
+                                  <GroupAdd color="secondary" />
+                                )}
                                 {activity.status === "default" && (
+                                  <History color="action" />
+                                )}
+                                {![
+                                  "success",
+                                  "info",
+                                  "warning",
+                                  "friendship",
+                                  "default",
+                                ].includes(activity.status) && (
                                   <History color="action" />
                                 )}
                               </ListItemIcon>

@@ -142,83 +142,164 @@ export const getUserActivity = async () => {
 /**
  * Получить статус для типа активности
  * @param {string} action - Тип действия
- * @returns {string} Статус (success, info, warning)
+ * @returns {string} Статус (success, info, warning, default)
  */
 const getActivityStatus = (action) => {
   switch (action) {
     case "ACHIEVEMENT_EARNED":
-    case "GOAL_COMPLETED":
-    case "EMAIL_VERIFIED":
+    case "TOPIC_COMPLETED":
       return "success";
     case "NOTE_CREATED":
     case "NOTE_UPDATED":
-    case "NOTE_DELETED":
-    case "TOPIC_CREATED":
     case "SKILL_CREATED":
-    case "GOAL_CREATED":
+    case "TOPIC_CREATED":
     case "LOGIN":
-    case "REGISTRATION":
       return "info";
-    case "PASSWORD_CHANGED":
     case "PASSWORD_CHANGE":
-    case "PROFILE_UPDATED":
+    case "PROFILE_UPDATE":
     case "AVATAR_CHANGE":
-    case "FEEDBACK_SENT":
+    case "EMAIL_CHANGE":
+    case "USERNAME_CHANGE":
+    case "PRIVACY_CHANGE":
+    case "FEEDBACK_SUBMITTED":
+    case "NOTE_UPDATED":
+    case "SKILL_UPDATED":
+    case "TOPIC_UPDATED":
       return "warning";
+    case "NOTE_DELETED":
+    case "SKILL_DELETED":
     case "LOGOUT":
       return "default";
+    // Все операции с друзьями имеют отдельный статус "friendship"
+    case "FRIEND_REQUEST_SENT":
+    case "FRIEND_REQUEST_ACCEPTED":
+    case "FRIEND_REQUEST_DECLINED":
+    case "FRIEND_REMOVED":
+      return "friendship";
     default:
       return "default";
   }
 };
 
 /**
- * Получить описание для типа активности
+ * Получить описание для типа активности на русском языке
  * @param {string} action - Тип действия
  * @param {Object} details - Детали действия
- * @returns {string} Описание действия
+ * @returns {string} Описание действия на русском
  */
 const getActivityDescription = (action, details) => {
   switch (action) {
     case "ACHIEVEMENT_EARNED":
       return `Получено достижение: ${
-        details?.achievementTitle || "Неизвестное достижение"
+        details?.achievementTitle ||
+        details?.achievementName ||
+        "Неизвестное достижение"
       }`;
     case "NOTE_CREATED":
-      return `Создана заметка: ${details?.noteTitle || "Без названия"}`;
+      return `Создана заметка: ${
+        details?.noteTitle || details?.title || "Без названия"
+      }`;
     case "NOTE_UPDATED":
-      return `Обновлена заметка: ${details?.noteTitle || "Без названия"}`;
+      return `Обновлена заметка: ${
+        details?.noteTitle || details?.title || "Без названия"
+      }`;
     case "NOTE_DELETED":
-      return `Удалена заметка: ${details?.noteTitle || "Без названия"}`;
+      return `Удалена заметка: ${
+        details?.noteTitle || details?.title || "Без названия"
+      }`;
     case "TOPIC_CREATED":
-      return `Создана тема: ${details?.topicTitle || "Без названия"}`;
+      return `Создана тема: ${
+        details?.topicTitle ||
+        details?.topicName ||
+        details?.name ||
+        "Без названия"
+      }`;
+    case "TOPIC_UPDATED":
+      return `Обновлена тема: ${
+        details?.topicTitle ||
+        details?.topicName ||
+        details?.name ||
+        "Без названия"
+      }`;
+    case "TOPIC_COMPLETED":
+      return `Завершена тема: ${
+        details?.topicTitle ||
+        details?.topicName ||
+        details?.name ||
+        "Неизвестная тема"
+      }`;
     case "SKILL_CREATED":
       return `Создан навык: ${
-        details?.skillTitle || details?.skillName || "Без названия"
+        details?.skillTitle ||
+        details?.skillName ||
+        details?.name ||
+        "Без названия"
+      }`;
+    case "SKILL_UPDATED":
+      return `Обновлен навык: ${
+        details?.skillTitle ||
+        details?.skillName ||
+        details?.name ||
+        "Без названия"
+      }`;
+    case "SKILL_DELETED":
+      return `Удален навык: ${
+        details?.skillTitle ||
+        details?.skillName ||
+        details?.name ||
+        "Без названия"
       }`;
     case "AVATAR_CHANGE":
       return "Изменен аватар";
-    case "PASSWORD_CHANGED":
     case "PASSWORD_CHANGE":
       return "Изменен пароль";
-    case "PROFILE_UPDATED":
+    case "PROFILE_UPDATE":
       return "Обновлен профиль";
+    case "EMAIL_CHANGE":
+      return `Изменен email${
+        details?.newEmail ? ` на ${details.newEmail}` : ""
+      }`;
+    case "USERNAME_CHANGE":
+      return `Изменено имя пользователя${
+        details?.newUsername ? ` на ${details.newUsername}` : ""
+      }`;
+    case "PRIVACY_CHANGE":
+      return `Профиль ${
+        details?.isPrivate ? "скрыт" : "открыт"
+      } для других пользователей`;
     case "LOGIN":
       return "Вход в систему";
     case "LOGOUT":
       return "Выход из системы";
-    case "GOAL_CREATED":
-      return `Создана цель: ${details?.goalTitle || "Без названия"}`;
-    case "GOAL_COMPLETED":
-      return `Завершена цель: ${details?.goalTitle || "Неизвестная цель"}`;
-    case "EMAIL_VERIFIED":
-      return "Подтвержден email";
-    case "REGISTRATION":
-      return "Регистрация в системе";
-    case "FEEDBACK_SENT":
-      return "Отправлена обратная связь";
+    case "FEEDBACK_SUBMITTED":
+      return `Отправлена обратная связь${
+        details?.subject ? `: ${details.subject}` : ""
+      }`;
+    case "FRIEND_REQUEST_SENT":
+      return `Отправлен запрос на дружбу${
+        details?.addresseeName ? ` пользователю ${details.addresseeName}` : ""
+      }`;
+    case "FRIEND_REQUEST_ACCEPTED":
+      return `Принят запрос на дружбу${
+        details?.requesterName ? ` от ${details.requesterName}` : ""
+      }`;
+    case "FRIEND_REQUEST_DECLINED":
+      return `Отклонен запрос на дружбу${
+        details?.requesterName ? ` от ${details.requesterName}` : ""
+      }`;
+    case "FRIEND_REMOVED":
+      return `Удален друг${
+        details?.friendName ? `: ${details.friendName}` : ""
+      }`;
     default:
-      return `Неизвестное действие: ${action}`;
+      // Переводим неизвестные действия на русский
+      const actionTranslations = {
+        REGISTRATION: "Регистрация в системе",
+        EMAIL_VERIFIED: "Подтвержден email",
+        GOAL_CREATED: "Создана цель",
+        GOAL_COMPLETED: "Завершена цель",
+      };
+      return actionTranslations[action] || `Неизвестное действие: ${action}`;
   }
 };
 
@@ -236,17 +317,45 @@ const getFallbackActivityData = () => [
   },
   {
     id: 2,
-    action: "PROFILE_UPDATED",
-    date: new Date(Date.now() - 86400000).toISOString(), // вчера
+    action: "PROFILE_UPDATE",
+    date: new Date(Date.now() - 3600000).toISOString(), // час назад
     status: "warning",
     description: "Обновлен профиль",
   },
   {
     id: 3,
+    action: "NOTE_CREATED",
+    date: new Date(Date.now() - 7200000).toISOString(), // 2 часа назад
+    status: "info",
+    description: "Создана заметка: Изучение React",
+  },
+  {
+    id: 4,
     action: "ACHIEVEMENT_EARNED",
-    date: new Date(Date.now() - 172800000).toISOString(), // позавчера
+    date: new Date(Date.now() - 86400000).toISOString(), // вчера
     status: "success",
     description: "Получено достижение: Первые шаги",
+  },
+  {
+    id: 5,
+    action: "FRIEND_REQUEST_SENT",
+    date: new Date(Date.now() - 172800000).toISOString(), // позавчера
+    status: "friendship",
+    description: "Отправлен запрос на дружбу",
+  },
+  {
+    id: 6,
+    action: "FRIEND_REQUEST_ACCEPTED",
+    date: new Date(Date.now() - 259200000).toISOString(), // 3 дня назад
+    status: "friendship",
+    description: "Принят запрос на дружбу от пользователя",
+  },
+  {
+    id: 7,
+    action: "FRIEND_REMOVED",
+    date: new Date(Date.now() - 345600000).toISOString(), // 4 дня назад
+    status: "friendship",
+    description: "Удален друг",
   },
 ];
 
