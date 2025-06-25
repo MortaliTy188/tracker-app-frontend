@@ -50,6 +50,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Pagination,
+  Switch,
 } from "@mui/material";
 import {
   Person,
@@ -225,6 +226,9 @@ export default function ProfilePage() {
   const [userSearch, setUserSearch] = useState("");
   const [usersPage, setUsersPage] = useState(1);
   const [usersPagination, setUsersPagination] = useState(null);
+
+  // States for privacy settings
+  const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
 
   const { getPreviousVisit } = useLastVisit();
 
@@ -693,6 +697,53 @@ export default function ProfilePage() {
   const handleUsersPageChange = useCallback((event, newPage) => {
     setUsersPage(newPage);
   }, []);
+
+  // Update user privacy setting
+  const updatePrivacySetting = useCallback(
+    async (isPrivate) => {
+      const API_BASE_URL =
+        process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
+      setIsUpdatingPrivacy(true);
+
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_BASE_URL}/api/users/privacy`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ isPrivate }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          // Update the local state
+          setUserProfile((prev) => ({
+            ...prev,
+            user: {
+              ...prev.user,
+              isPrivate: isPrivate,
+            },
+          }));
+          showSuccess(
+            `Профиль теперь ${isPrivate ? "приватный" : "публичный"}`
+          );
+        } else {
+          showError(
+            result.message || "Не удалось изменить настройки приватности"
+          );
+        }
+      } catch (error) {
+        console.error("Error updating privacy:", error);
+        showError("Произошла ошибка при изменении настроек приватности");
+      } finally {
+        setIsUpdatingPrivacy(false);
+      }
+    },
+    [showSuccess, showError]
+  );
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -2590,7 +2641,15 @@ export default function ProfilePage() {
                       <ListItem>
                         <ListItemText
                           primary="Приватный профиль"
-                          secondary="Скрыть профиль от других пользователей"
+                          secondary="Скрыть статистику от других пользователей"
+                        />
+                        <Switch
+                          checked={userProfile?.user?.isPrivate || false}
+                          onChange={(e) =>
+                            updatePrivacySetting(e.target.checked)
+                          }
+                          disabled={isUpdatingPrivacy}
+                          color="primary"
                         />
                       </ListItem>
                       <ListItem>
@@ -2598,6 +2657,7 @@ export default function ProfilePage() {
                           primary="Показать активность"
                           secondary="Отображать время последней активности"
                         />
+                        <Switch disabled color="primary" />
                       </ListItem>
                     </List>
                   </CardContent>
