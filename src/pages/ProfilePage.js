@@ -81,6 +81,7 @@ import {
   Close,
   Message,
   GroupAdd,
+  Send,
 } from "@mui/icons-material";
 import Navbar from "../components/Navbar";
 import { getAvatarUrl } from "../utils/avatarUtils";
@@ -236,6 +237,9 @@ export default function ProfilePage() {
   const [userSearch, setUserSearch] = useState("");
   const [usersPage, setUsersPage] = useState(1);
   const [usersPagination, setUsersPagination] = useState(null);
+
+  // States for Sent Requests modal
+  const [sentRequestsModal, setSentRequestsModal] = useState(false);
 
   // States for privacy settings
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
@@ -717,6 +721,12 @@ export default function ProfilePage() {
 
       try {
         const token = localStorage.getItem("token");
+        console.log("Updating privacy setting:", {
+          isPrivate,
+          token: !!token,
+          API_BASE_URL,
+        });
+
         const response = await fetch(`${API_BASE_URL}/api/users/privacy`, {
           method: "PUT",
           headers: {
@@ -727,6 +737,10 @@ export default function ProfilePage() {
         });
 
         const result = await response.json();
+        console.log("Privacy update response:", {
+          status: response.status,
+          result,
+        });
 
         if (response.ok && result.success) {
           // Update the local state
@@ -741,6 +755,7 @@ export default function ProfilePage() {
             `Профиль теперь ${isPrivate ? "приватный" : "публичный"}`
           );
         } else {
+          console.error("Privacy update failed:", result);
           showError(
             result.message || "Не удалось изменить настройки приватности"
           );
@@ -2121,6 +2136,16 @@ export default function ProfilePage() {
                 >
                   Найти друзей
                 </Button>
+                {sentRequests.length > 0 && (
+                  <Button
+                    variant="outlined"
+                    color="info"
+                    startIcon={<Send />}
+                    onClick={() => setSentRequestsModal(true)}
+                  >
+                    Исходящие запросы ({sentRequests.length})
+                  </Button>
+                )}
                 {pendingRequests.length > 0 && (
                   <Badge badgeContent={pendingRequests.length} color="warning">
                     <Chip
@@ -2184,7 +2209,7 @@ export default function ProfilePage() {
                               }}
                             >
                               <Avatar
-                                src={request.requester.avatar}
+                                src={getAvatarUrl(request.requester.avatar)}
                                 sx={{ mr: 2 }}
                               >
                                 {(
@@ -2323,7 +2348,7 @@ export default function ProfilePage() {
                                     }}
                                   >
                                     <Avatar
-                                      src={friend.avatar}
+                                      src={getAvatarUrl(friend.avatar)}
                                       sx={{
                                         mr: 2,
                                         width: 56,
@@ -2344,13 +2369,6 @@ export default function ProfilePage() {
                                         {friend.firstName && friend.lastName
                                           ? `${friend.firstName} ${friend.lastName}`
                                           : friend.username || friend.name}
-                                      </Typography>
-                                      <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                        sx={{ mb: 1 }}
-                                      >
-                                        @{friend.username}
                                       </Typography>
                                       <Box
                                         sx={{
@@ -2884,7 +2902,7 @@ export default function ProfilePage() {
                     >
                       <Box sx={{ display: "flex", alignItems: "center" }}>
                         <Avatar
-                          src={user.avatar}
+                          src={getAvatarUrl(user.avatar)}
                           sx={{ mr: 2, width: 50, height: 50 }}
                         >
                           {user.name.charAt(0)}
@@ -3063,6 +3081,111 @@ export default function ProfilePage() {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setFindFriendsModal(false)}>Закрыть</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Sent Requests Dialog */}
+        <Dialog
+          open={sentRequestsModal}
+          onClose={() => setSentRequestsModal(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>Исходящие запросы на дружбу</DialogTitle>
+          <DialogContent>
+            {friendshipLoading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+                <LinearProgress sx={{ width: "100%" }} />
+              </Box>
+            ) : sentRequests.length === 0 ? (
+              <Box
+                sx={{
+                  textAlign: "center",
+                  py: 6,
+                  color: "text.secondary",
+                }}
+              >
+                <Send sx={{ fontSize: 64, mb: 2, opacity: 0.5 }} />
+                <Typography variant="h6" gutterBottom>
+                  Нет исходящих запросов
+                </Typography>
+                <Typography variant="body2">
+                  Вы не отправляли запросы на дружбу
+                </Typography>
+              </Box>
+            ) : (
+              <List>
+                {sentRequests.map((request) => (
+                  <ListItem
+                    key={request.friendshipId}
+                    sx={{
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      mb: 1,
+                    }}
+                  >
+                    <Avatar
+                      src={getAvatarUrl(request.addressee.avatar)}
+                      sx={{ mr: 2, bgcolor: "primary.main" }}
+                    >
+                      {(request.addressee.name || "").charAt(0)}
+                    </Avatar>
+                    <ListItemText
+                      primary={request.addressee.name}
+                      secondary={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Chip
+                            label={`Уровень ${request.addressee.level}`}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                          />
+                          <Typography variant="caption" color="text.secondary">
+                            Отправлено:{" "}
+                            {new Date(request.requestDate).toLocaleDateString("ru-RU")}
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              `Вы уверены, что хотите отменить запрос на дружбу для ${request.addressee.name}?`
+                            )
+                          ) {
+                            removeFriend(request.friendshipId).then((result) => {
+                              if (result.success) {
+                                showSuccess("Запрос отменен");
+                                loadSentRequests(); // Обновить исходящие запросы
+                                loadFriends(); // Обновить список друзей
+                              } else {
+                                showError(result.message);
+                              }
+                            });
+                          }
+                        }}
+                      >
+                        Отменить запрос
+                      </Button>
+                    </Box>
+                  </ListItem>
+                ))}
+              </List>
+            )}
+            {friendshipError && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {friendshipError}
+              </Alert>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setSentRequestsModal(false)}>Закрыть</Button>
           </DialogActions>
         </Dialog>
         {/* Snackbar for notifications */}

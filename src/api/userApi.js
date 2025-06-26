@@ -160,7 +160,7 @@ const getActivityStatus = (action) => {
     case "AVATAR_CHANGE":
     case "EMAIL_CHANGE":
     case "USERNAME_CHANGE":
-    case "PRIVACY_CHANGE":
+    case "PROFILE_UPDATE":
     case "FEEDBACK_SUBMITTED":
     case "NOTE_UPDATED":
     case "SKILL_UPDATED":
@@ -263,10 +263,12 @@ const getActivityDescription = (action, details) => {
       return `Изменено имя пользователя${
         details?.newUsername ? ` на ${details.newUsername}` : ""
       }`;
-    case "PRIVACY_CHANGE":
-      return `Профиль ${
-        details?.isPrivate ? "скрыт" : "открыт"
-      } для других пользователей`;
+    case "PROFILE_UPDATE":
+      return details?.isPrivate !== undefined
+        ? `Профиль ${
+            details.isPrivate ? "скрыт" : "открыт"
+          } для других пользователей`
+        : "Профиль обновлен";
     case "LOGIN":
       return "Вход в систему";
     case "LOGOUT":
