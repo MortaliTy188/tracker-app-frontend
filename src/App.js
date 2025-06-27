@@ -2,6 +2,7 @@ import "./App.css";
 import LoginPage from "./pages/LoginPage";
 import LandingPage from "./pages/LandingPage";
 import ProfilePage from "./pages/ProfilePage";
+import ProfilePageModular from "./pages/ProfilePageModular";
 import DashboardPage from "./pages/DashboardPage";
 import { useLastVisit } from "./hooks/useLastVisit";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -26,6 +27,14 @@ function App() {
           />
           <Route
             path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePageModular />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profileOld"
             element={
               <ProtectedRoute>
                 <ProfilePage />

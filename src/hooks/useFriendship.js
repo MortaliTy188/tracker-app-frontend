@@ -146,12 +146,17 @@ export const useFriendship = () => {
 
   // Отправить запрос на дружбу
   const sendFriendRequest = useCallback(async (addresseeId) => {
+    console.log("🤝 SendFriendRequest - Addressee ID:", addresseeId);
     setIsLoading(true);
     setError(null);
 
     try {
       const token = getToken();
-      const response = await fetch(`${API_BASE}/friendship/request`, {
+      const url = `${API_BASE}/friendship/request`;
+      console.log("🤝 Request URL:", url);
+      console.log("🤝 Request payload:", { addresseeId });
+
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -161,8 +166,10 @@ export const useFriendship = () => {
       });
 
       const data = await response.json();
+      console.log("🤝 Response data:", data);
 
       if (data.success) {
+        console.log("🤝 Friend request sent successfully");
         return {
           success: true,
           message: data.message,
@@ -173,6 +180,7 @@ export const useFriendship = () => {
       }
     } catch (error) {
       const errorMessage = error.message || "Ошибка при отправке запроса";
+      console.error("🤝 Error sending friend request:", errorMessage);
       setError(errorMessage);
       return {
         success: false,
