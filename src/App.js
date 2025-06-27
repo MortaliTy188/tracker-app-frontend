@@ -1,7 +1,7 @@
 import "./App.css";
 import LoginPage from "./pages/LoginPage";
 import LandingPage from "./pages/LandingPage";
-import ProfilePage from "./pages/ProfilePage";
+import ProfilePage from "./pages/ProfilePageOld";
 import ProfilePageModular from "./pages/ProfilePageModular";
 import DashboardPage from "./pages/DashboardPage";
 import { useLastVisit } from "./hooks/useLastVisit";
