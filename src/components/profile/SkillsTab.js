@@ -243,10 +243,10 @@ export default function SkillsTab({
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle>{t("skills.createSkill", "Создать навык")}</DialogTitle>
+        <DialogTitle>{t("skillBtn.createSkill")}</DialogTitle>
         <DialogContent>
           <TextField
-            label={t("skills.name", "Название навыка")}
+            label={t("skillBtn.name")}
             name="name"
             value={form.name}
             onChange={handleFormChange}
@@ -255,7 +255,7 @@ export default function SkillsTab({
             required
           />
           <TextField
-            label={t("skills.description", "Описание")}
+            label={t("skillBtn.description")}
             name="description"
             value={form.description}
             onChange={handleFormChange}
@@ -266,7 +266,7 @@ export default function SkillsTab({
           />
           <TextField
             select
-            label={t("skills.category", "Категория")}
+            label={t("skillBtn.category")}
             name="category_id"
             value={form.category_id}
             onChange={handleFormChange}
@@ -287,16 +287,14 @@ export default function SkillsTab({
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseCreate}>
-            {t("common.cancel", "Отмена")}
-          </Button>
+          <Button onClick={handleCloseCreate}>{t("common.cancel")}</Button>
           <Button
             onClick={handleCreateSkill}
             variant="contained"
             color="primary"
             disabled={creating}
           >
-            {t("skills.create", "Создать")}
+            {t("skillBtn.createSkill")}
           </Button>
         </DialogActions>
       </Dialog>

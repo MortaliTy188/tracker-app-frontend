@@ -491,6 +491,15 @@
     "closeChat": "Close chat"
   },
   "skillBtn": {
-    "createSkill": "Create skill"
+    "createSkill": "Create Skill",
+    "name": "Skill Name",
+    "description": "Description",
+    "category": "Category",
+    "create": "Create",
+    "createRequiredFields": "Please fill in all required fields",
+    "createError": "Error creating skill"
+  },
+  "skill": {
+    "categoriesTitle": "Skill Categories"
   }
 }

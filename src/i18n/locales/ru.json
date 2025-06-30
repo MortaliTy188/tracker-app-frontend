@@ -487,6 +487,15 @@
     "closeChat": "Закрыть чат"
   },
   "skillBtn": {
-    "createSkill": "Создать навык"
+    "createSkill": "Создать навык",
+    "name": "Название навыка",
+    "description": "Описание",
+    "category": "Категория",
+    "create": "Создать",
+    "createRequiredFields": "Заполните все обязательные поля",
+    "createError": "Ошибка при создании навыка"
+  },
+  "skill": {
+    "categoriesTitle": "Категории навыков"
   }
 }

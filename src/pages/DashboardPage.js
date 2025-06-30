@@ -1114,7 +1114,7 @@ export default function DashboardPage() {
                 >
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
-                      {t("skills.categoriesTitle")}
+                      {t("skill.categoriesTitle")}
                     </Typography>
                     {isLoadingData ? (
                       <Skeleton variant="rectangular" height={200} />
@@ -1129,7 +1129,10 @@ export default function DashboardPage() {
                             fill="#8884d8"
                             dataKey="value"
                             label={({ name, percent }) =>
-                              `${t(`skills.categories.${name.toLowerCase()}`, t(`skills.categories.${name}`, name))} ${(percent * 100).toFixed(0)}%`
+                              `${t(
+                                `skills.categories.${name.toLowerCase()}`,
+                                t(`skills.categories.${name}`, name)
+                              )} ${(percent * 100).toFixed(0)}%`
                             }
                           >
                             {dashboardData.charts.categoryDistribution.map(
