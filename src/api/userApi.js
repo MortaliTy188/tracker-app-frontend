@@ -111,7 +111,8 @@ export const getUserActivity = async () => {
         date: log.created_at,
         details: log.details,
         status: getActivityStatus(log.action),
-        description: getActivityDescription(log.action, log.details),
+        // Убираем генерацию description - будем переводить в компоненте
+        // description: getActivityDescription(log.action, log.details),
       }));
 
       return {
@@ -315,49 +316,51 @@ const getFallbackActivityData = () => [
     action: "LOGIN",
     date: new Date().toISOString(),
     status: "info",
-    description: "Вход в систему",
+    // Убираем description - будем переводить в компоненте
   },
   {
     id: 2,
     action: "PROFILE_UPDATE",
     date: new Date(Date.now() - 3600000).toISOString(), // час назад
     status: "warning",
-    description: "Обновлен профиль",
+    // Убираем description - будем переводить в компоненте
   },
   {
     id: 3,
     action: "NOTE_CREATED",
     date: new Date(Date.now() - 7200000).toISOString(), // 2 часа назад
     status: "info",
-    description: "Создана заметка: Изучение React",
+    details: { noteTitle: "Изучение React" },
+    // Убираем description - будем переводить в компоненте
   },
   {
     id: 4,
     action: "ACHIEVEMENT_EARNED",
     date: new Date(Date.now() - 86400000).toISOString(), // вчера
     status: "success",
-    description: "Получено достижение: Первые шаги",
+    details: { achievementTitle: "Первые шаги" },
+    // Убираем description - будем переводить в компоненте
   },
   {
     id: 5,
     action: "FRIEND_REQUEST_SENT",
     date: new Date(Date.now() - 172800000).toISOString(), // позавчера
     status: "friendship",
-    description: "Отправлен запрос на дружбу",
+    // Убираем description - будем переводить в компоненте
   },
   {
     id: 6,
     action: "FRIEND_REQUEST_ACCEPTED",
     date: new Date(Date.now() - 259200000).toISOString(), // 3 дня назад
     status: "friendship",
-    description: "Принят запрос на дружбу от пользователя",
+    // Убираем description - будем переводить в компоненте
   },
   {
     id: 7,
     action: "FRIEND_REMOVED",
     date: new Date(Date.now() - 345600000).toISOString(), // 4 дня назад
     status: "friendship",
-    description: "Удален друг",
+    // Убираем description - будем переводить в компоненте
   },
 ];
 

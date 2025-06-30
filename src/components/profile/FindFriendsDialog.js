@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogTitle,
@@ -38,6 +39,8 @@ const FindFriendsDialog = ({
   loadPendingRequests,
   fetchAllUsers,
 }) => {
+  const { t, i18n } = useTranslation();
+
   // Локальное состояние для оптимистичных обновлений
   const [localFriendshipUpdates, setLocalFriendshipUpdates] = useState({});
 
@@ -69,6 +72,7 @@ const FindFriendsDialog = ({
     setLocalFriendshipUpdates({});
     onClose();
   };
+
   const handleSendRequest = async (userId) => {
     console.log("🟡 HandleSendRequest - User ID:", userId);
 
@@ -85,7 +89,7 @@ const FindFriendsDialog = ({
     console.log("🟡 Friend request result:", result);
 
     if (result.success) {
-      showSuccess("Запрос на дружбу отправлен");
+      showSuccess(t("profile.friends.messages.requestSent"));
 
       // Ждем обновления списка пользователей
       console.log("🟡 Fetching updated users...");
@@ -129,7 +133,7 @@ const FindFriendsDialog = ({
 
     const result = await onAcceptFriendRequest(friendshipId);
     if (result.success) {
-      showSuccess("Запрос принят");
+      showSuccess(t("profile.friends.messages.requestAccepted"));
       // Ждем обновления всех данных
       await Promise.all([
         fetchAllUsers(),
@@ -161,7 +165,7 @@ const FindFriendsDialog = ({
 
     const result = await onDeclineFriendRequest(friendshipId);
     if (result.success) {
-      showSuccess("Запрос отклонен");
+      showSuccess(t("profile.friends.messages.requestDeclined"));
       // Ждем обновления данных
       await Promise.all([fetchAllUsers(), loadPendingRequests()]);
       setLocalFriendshipUpdates((prev) => {
@@ -182,16 +186,16 @@ const FindFriendsDialog = ({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>Найти друзей</DialogTitle>
+      <DialogTitle>{t("profile.friends.findFriends")}</DialogTitle>
       <DialogContent>
         <Box sx={{ mb: 2 }}>
           <TextField
             fullWidth
-            label="Поиск пользователей"
+            label={t("profile.friends.searchUsers")}
             variant="outlined"
             value={userSearch}
             onChange={onUserSearchChange}
-            placeholder="Введите имя пользователя..."
+            placeholder={t("profile.friends.searchPlaceholder")}
           />
         </Box>
 
@@ -210,8 +214,8 @@ const FindFriendsDialog = ({
             sx={{ textAlign: "center", py: 4 }}
           >
             {userSearch
-              ? "Пользователи не найдены"
-              : "Нет доступных пользователей"}
+              ? t("friends.usersNotFound")
+              : t("friends.noUsersAvailable")}
           </Typography>
         )}
 
@@ -248,15 +252,9 @@ const FindFriendsDialog = ({
                       </Avatar>
                       <Box>
                         <Typography variant="h6">{user.name}</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Уровень {user.level} •{" "}
-                          {new Date(user.registrationDate).toLocaleDateString(
-                            "ru-RU"
-                          )}
-                        </Typography>
                         {user.isPrivate && (
                           <Chip
-                            label="Приватный профиль"
+                            label={t("profile.friends.privateProfile")}
                             size="small"
                             color="warning"
                             variant="outlined"
@@ -273,7 +271,7 @@ const FindFriendsDialog = ({
                           startIcon={<PersonAdd />}
                           onClick={() => handleSendRequest(user.id)}
                         >
-                          Добавить в друзья
+                          {t("profile.friends.actions.addFriend")}
                         </Button>
                       )}
                       {friendshipStatus?.status === "sent_request" && (
@@ -283,7 +281,7 @@ const FindFriendsDialog = ({
                           disabled
                           color="warning"
                         >
-                          Запрос отправлен
+                          {t("profile.friends.actions.requestSent")}
                         </Button>
                       )}
                       {friendshipStatus?.status === "received_request" && (
@@ -299,7 +297,7 @@ const FindFriendsDialog = ({
                               )
                             }
                           >
-                            Принять
+                            {t("profile.friends.actions.accept")}
                           </Button>
                           <Button
                             variant="outlined"
@@ -312,13 +310,13 @@ const FindFriendsDialog = ({
                               )
                             }
                           >
-                            Отклонить
+                            {t("profile.friends.actions.decline")}
                           </Button>
                         </Box>
                       )}
                       {friendshipStatus?.status === "accepted" && (
                         <Chip
-                          label="Уже друзья"
+                          label={t("profile.friends.actions.alreadyFriends")}
                           size="small"
                           color="success"
                           icon={<Check />}

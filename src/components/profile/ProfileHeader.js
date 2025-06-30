@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Paper,
   Grid,
@@ -22,6 +23,8 @@ export default function ProfileHeader({
   onAvatarChange,
   onLogout,
 }) {
+  const { t } = useTranslation();
+
   if (!userProfile) return null;
 
   return (
@@ -68,21 +71,29 @@ export default function ProfileHeader({
           </Typography>
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mt: 1 }}>
             <Chip
-              label={`В системе с ${formatNumericDate(
-                userProfile.user.registrationDate
-              )}`}
+              label={t("profileHeader.memberSince", {
+                date: formatNumericDate(userProfile.user.registrationDate),
+              })}
               color="primary"
               variant="outlined"
               size="small"
             />
             <Chip
-              label={`Всего навыков: ${userProfile.stats.totalSkills}`}
+              label={t("profileHeader.totalSkills", {
+                count: userProfile.stats.totalSkills,
+              })}
               color="success"
               variant="outlined"
               size="small"
             />
             <Chip
-              label={`Уровень: ${userProfile.user.level}`}
+              label={`${t("stats.level").replace(":", "")} ${
+                userProfile.user.level
+                  ? t(`stats.levels.${userProfile.user.level}`, {
+                      defaultValue: userProfile.user.level,
+                    })
+                  : t("stats.beginner")
+              }`}
               color="warning"
               variant="outlined"
               size="small"
@@ -96,7 +107,7 @@ export default function ProfileHeader({
             startIcon={<ExitToApp />}
             onClick={onLogout}
           >
-            Выйти
+            {t("navbar.logout")}
           </Button>
         </Grid>
       </Grid>

@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Card,
   CardContent,
@@ -21,6 +22,49 @@ import {
   History,
   GroupAdd,
 } from "@mui/icons-material";
+
+/**
+ * Получить переведенное описание активности
+ */
+const getActivityDescription = (activity, t) => {
+  const action = activity.action;
+  const details = activity.details || {};
+  
+  // Получаем базовое описание действия
+  const baseDescription = t(`activity.actions.${action}`, { defaultValue: action });
+  
+  // Добавляем детали в зависимости от типа действия
+  switch (action) {
+    case 'TOPIC_CREATED':
+    case 'TOPIC_COMPLETED':
+    case 'TOPIC_UPDATED':
+      return details.topicName 
+        ? `${baseDescription}: "${details.topicName}"` 
+        : baseDescription;
+        
+    case 'NOTE_CREATED':
+    case 'NOTE_UPDATED':
+    case 'NOTE_DELETED':
+      return details.noteTitle 
+        ? `${baseDescription}: "${details.noteTitle}"` 
+        : baseDescription;
+        
+    case 'SKILL_CREATED':
+    case 'SKILL_UPDATED':
+    case 'SKILL_DELETED':
+      return details.skillName 
+        ? `${baseDescription}: "${details.skillName}"` 
+        : baseDescription;
+        
+    case 'ACHIEVEMENT_EARNED':
+      return details.achievementName 
+        ? `${baseDescription}: "${details.achievementName}"` 
+        : baseDescription;
+        
+    default:
+      return baseDescription;
+  }
+};
 
 /**
  * Получить иконку для статуса активности
@@ -56,6 +100,8 @@ export default function ActivityTab({
   getStatusLabel,
   getStatusColor,
 }) {
+  const { t, i18n } = useTranslation();
+
   if (activityLoading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
@@ -68,7 +114,7 @@ export default function ActivityTab({
     <Card>
       <CardContent>
         <Typography variant="h6" gutterBottom>
-          История активности
+          {t("activity.historyTitle")}
         </Typography>
 
         {Array.isArray(activities) && activities.length > 0 ? (
@@ -83,11 +129,16 @@ export default function ActivityTab({
               }}
             >
               <Typography variant="body2" color="textSecondary">
-                Показано {getPaginatedActivities().length} из{" "}
-                {activities.length} записей
+                {t("activity.showing", {
+                  current: getPaginatedActivities().length,
+                  total: activities.length,
+                })}
               </Typography>
               <Typography variant="body2" color="textSecondary">
-                Страница {activityPage} из {getTotalActivityPages()}
+                {t("activity.pageInfo", {
+                  current: activityPage,
+                  total: getTotalActivityPages(),
+                })}
               </Typography>
             </Box>
 
@@ -99,9 +150,9 @@ export default function ActivityTab({
                       {getActivityIcon(activity.status)}
                     </ListItemIcon>
                     <ListItemText
-                      primary={activity.description}
+                      primary={getActivityDescription(activity, t)}
                       secondary={new Date(activity.date).toLocaleString(
-                        "ru-RU",
+                        i18n.language === "ru" ? "ru-RU" : "en-US",
                         {
                           year: "numeric",
                           month: "long",
@@ -147,10 +198,10 @@ export default function ActivityTab({
           <Box sx={{ textAlign: "center", p: 4 }}>
             <History sx={{ fontSize: 60, color: "grey.400", mb: 2 }} />
             <Typography variant="h6" color="textSecondary">
-              История активности пуста
+              {t("activity.emptyHistory")}
             </Typography>
             <Typography variant="body2" color="textSecondary">
-              Ваши действия в системе будут отображаться здесь
+              {t("activity.actionsWillShow")}
             </Typography>
           </Box>
         )}

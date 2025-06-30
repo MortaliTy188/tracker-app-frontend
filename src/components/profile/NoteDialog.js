@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogTitle,
@@ -24,15 +25,19 @@ const NoteDialog = ({
   topicsLoading,
   topicsError,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        {editingNote ? "Редактировать заметку" : "Новая заметка"}
+        {editingNote
+          ? t("profile.notes.dialog.edit")
+          : t("profile.notes.dialog.create")}
       </DialogTitle>
       <DialogContent>
         <TextField
           fullWidth
-          label="Название заметки"
+          label={t("profile.notes.dialog.title")}
           variant="outlined"
           value={noteForm.title}
           onChange={(e) =>
@@ -46,7 +51,7 @@ const NoteDialog = ({
         />
         <TextField
           fullWidth
-          label="Содержание"
+          label={t("profile.notes.dialog.content")}
           variant="outlined"
           value={noteForm.content}
           onChange={(e) =>
@@ -61,10 +66,10 @@ const NoteDialog = ({
           required
         />
         <FormControl fullWidth margin="normal" required>
-          <InputLabel>Топик</InputLabel>
+          <InputLabel>{t("profile.notes.dialog.topic")}</InputLabel>
           <Select
             value={noteForm.topic_id}
-            label="Топик"
+            label={t("profile.notes.dialog.topic")}
             onChange={(e) =>
               onNoteFormChange({
                 ...noteForm,
@@ -74,11 +79,11 @@ const NoteDialog = ({
             disabled={topicsLoading}
           >
             {topicsLoading ? (
-              <MenuItem disabled>Загрузка топиков...</MenuItem>
+              <MenuItem disabled>{t("notes.loadingTopics")}</MenuItem>
             ) : topicsError ? (
-              <MenuItem disabled>Ошибка загрузки топиков</MenuItem>
+              <MenuItem disabled>{t("notes.topicsLoadError")}</MenuItem>
             ) : topics.length === 0 ? (
-              <MenuItem disabled>Нет доступных топиков</MenuItem>
+              <MenuItem disabled>{t("notes.noTopicsAvailable")}</MenuItem>
             ) : (
               topics.map((topic) => (
                 <MenuItem key={topic.id} value={topic.id}>
@@ -90,7 +95,7 @@ const NoteDialog = ({
         </FormControl>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Отмена</Button>
+        <Button onClick={onClose}>{t("profile.notes.dialog.cancel")}</Button>
         <Button
           onClick={onSave}
           variant="contained"
@@ -100,7 +105,7 @@ const NoteDialog = ({
             !noteForm.topic_id
           }
         >
-          {editingNote ? "Обновить" : "Создать"}
+          {editingNote ? t("notes.update") : t("notes.create")}
         </Button>
       </DialogActions>
     </Dialog>

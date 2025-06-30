@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useTranslation } from "react-i18next";
 import {
   Typography,
   Grid,
@@ -12,7 +14,16 @@ import {
   Chip,
   Paper,
   Alert,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  MenuItem,
 } from "@mui/material";
+
+const API_BASE_URL = "http://localhost:3000/api";
 
 /**
  * Компонент вкладки навыков
@@ -23,6 +34,183 @@ export default function SkillsTab({
   skillsLoading,
   skillsError,
 }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    category_id: "",
+  });
+  const [formError, setFormError] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [topicModalOpen, setTopicModalOpen] = useState(false);
+  const [selectedSkill, setSelectedSkill] = useState(null);
+  const [topicForm, setTopicForm] = useState({
+    name: "",
+    description: "",
+    status_id: "",
+    progress: 0,
+    estimated_hours: 0,
+  });
+  const [topicFormError, setTopicFormError] = useState("");
+  const [topicCreating, setTopicCreating] = useState(false);
+  const [statuses, setStatuses] = useState([]);
+
+  useEffect(() => {
+    // Fetch categories on mount
+    fetchCategories();
+    fetchStatuses();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/categories`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
+      const data = await response.json();
+      if (data && data.success && data.data.categories) {
+        setCategories(data.data.categories);
+      }
+    } catch (e) {
+      setCategories([]);
+    }
+  };
+
+  const fetchStatuses = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/statuses`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const data = await response.json();
+      if (data && data.success && data.data.statuses) {
+        setStatuses(data.data.statuses);
+      }
+    } catch (e) {
+      setStatuses([]);
+    }
+  };
+
+  const handleOpenCreate = () => {
+    setForm({ name: "", description: "", category_id: "" });
+    setFormError("");
+    setCreateOpen(true);
+  };
+  const handleCloseCreate = () => {
+    setCreateOpen(false);
+    setFormError("");
+  };
+  const handleFormChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+  const handleCreateSkill = async () => {
+    if (!form.name || !form.category_id) {
+      setFormError(
+        t("skills.createRequiredFields", "Заполните все обязательные поля")
+      );
+      return;
+    }
+    setCreating(true);
+    setFormError("");
+    try {
+      const response = await fetch(`${API_BASE_URL}/skills`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({
+          name: form.name,
+          description: form.description,
+          category_id: Number(form.category_id),
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to create skill");
+      setCreateOpen(false);
+      setForm({ name: "", description: "", category_id: "" });
+      window.location.reload();
+    } catch (e) {
+      setFormError(
+        e?.message || t("skills.createError", "Ошибка при создании навыка")
+      );
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleCardClick = (skill) => {
+    setSelectedSkill(skill);
+    setTopicForm({
+      name: "",
+      description: "",
+      status_id: "",
+      progress: 0,
+      estimated_hours: 0,
+    });
+    setTopicFormError("");
+    setTopicModalOpen(true);
+  };
+  const handleCloseTopicModal = () => {
+    setTopicModalOpen(false);
+    setSelectedSkill(null);
+    setTopicFormError("");
+  };
+  const handleTopicFormChange = (e) => {
+    setTopicForm({ ...topicForm, [e.target.name]: e.target.value });
+  };
+  const handleCreateTopic = async () => {
+    if (!topicForm.name || !topicForm.status_id) {
+      setTopicFormError(
+        t("skills.createRequiredFields", "Заполните все обязательные поля")
+      );
+      return;
+    }
+    setTopicCreating(true);
+    setTopicFormError("");
+    try {
+      const response = await fetch(`${API_BASE_URL}/topics`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({
+          name: topicForm.name,
+          description: topicForm.description,
+          skill_id: selectedSkill.id,
+          status_id: Number(topicForm.status_id),
+          progress: Number(topicForm.progress),
+          estimated_hours: Number(topicForm.estimated_hours),
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to create topic");
+      setTopicModalOpen(false);
+      setTopicForm({
+        name: "",
+        description: "",
+        status_id: "",
+        progress: 0,
+        estimated_hours: 0,
+      });
+      setSelectedSkill(null);
+      window.location.reload();
+    } catch (e) {
+      setTopicFormError(
+        e?.message || t("skills.createError", "Ошибка при создании темы")
+      );
+    } finally {
+      setTopicCreating(false);
+    }
+  };
+
+  // Вспомогательная функция получения токена (локально, как в других местах)
+  const getToken = () => {
+    return localStorage.getItem("token") || sessionStorage.getItem("token");
+  };
+
   if (skillsLoading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
@@ -33,15 +221,179 @@ export default function SkillsTab({
 
   return (
     <>
-      <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-        📚 Ваши навыки
-      </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
+        <Typography variant="h5" gutterBottom>
+          📚 {t("skills.yourSkills")}
+        </Typography>
+        <Button variant="contained" color="primary" onClick={handleOpenCreate}>
+          {t("skillBtn.createSkill")}
+        </Button>
+      </Box>
+      {/* Модальное окно создания навыка */}
+      <Dialog
+        open={createOpen}
+        onClose={handleCloseCreate}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>{t("skills.createSkill", "Создать навык")}</DialogTitle>
+        <DialogContent>
+          <TextField
+            label={t("skills.name", "Название навыка")}
+            name="name"
+            value={form.name}
+            onChange={handleFormChange}
+            fullWidth
+            margin="normal"
+            required
+          />
+          <TextField
+            label={t("skills.description", "Описание")}
+            name="description"
+            value={form.description}
+            onChange={handleFormChange}
+            fullWidth
+            margin="normal"
+            multiline
+            minRows={2}
+          />
+          <TextField
+            select
+            label={t("skills.category", "Категория")}
+            name="category_id"
+            value={form.category_id}
+            onChange={handleFormChange}
+            fullWidth
+            margin="normal"
+            required
+          >
+            {categories.map((cat) => (
+              <MenuItem key={cat.id} value={cat.id}>
+                {cat.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          {formError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {formError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCreate}>
+            {t("common.cancel", "Отмена")}
+          </Button>
+          <Button
+            onClick={handleCreateSkill}
+            variant="contained"
+            color="primary"
+            disabled={creating}
+          >
+            {t("skills.create", "Создать")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Модальное окно создания темы */}
+      <Dialog
+        open={topicModalOpen}
+        onClose={handleCloseTopicModal}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>
+          {t("skills.createTopic", "Добавить тему к навыку")}
+          {selectedSkill ? `: ${selectedSkill.name}` : ""}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            label={t("skills.topicName", "Название темы")}
+            name="name"
+            value={topicForm.name}
+            onChange={handleTopicFormChange}
+            fullWidth
+            margin="normal"
+            required
+          />
+          <TextField
+            label={t("skills.topicDescription", "Описание темы")}
+            name="description"
+            value={topicForm.description}
+            onChange={handleTopicFormChange}
+            fullWidth
+            margin="normal"
+            multiline
+            minRows={2}
+          />
+          <TextField
+            select
+            label={t("skills.topicStatus", "Статус")}
+            name="status_id"
+            value={topicForm.status_id}
+            onChange={handleTopicFormChange}
+            fullWidth
+            margin="normal"
+            required
+          >
+            {statuses.map((status) => (
+              <MenuItem key={status.id} value={status.id}>
+                {status.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            label={t("skills.topicProgress", "Прогресс, %")}
+            name="progress"
+            type="number"
+            value={topicForm.progress}
+            onChange={handleTopicFormChange}
+            fullWidth
+            margin="normal"
+            inputProps={{ min: 0, max: 100 }}
+          />
+          <TextField
+            label={t("skills.topicEstimatedHours", "Оценка часов")}
+            name="estimated_hours"
+            type="number"
+            value={topicForm.estimated_hours}
+            onChange={handleTopicFormChange}
+            fullWidth
+            margin="normal"
+            inputProps={{ min: 0 }}
+          />
+          {topicFormError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {topicFormError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseTopicModal}>
+            {t("common.cancel", "Отмена")}
+          </Button>
+          <Button
+            onClick={handleCreateTopic}
+            variant="contained"
+            color="primary"
+            disabled={topicCreating}
+          >
+            {t("skills.create", "Создать")}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Skills Statistics Overview */}
       {skillsStats && (
         <Paper sx={{ p: 3, mb: 3 }}>
           <Typography variant="h6" gutterBottom>
-            Общая статистика навыков
+            {t("skills.generalStats")}
           </Typography>
           <Grid container spacing={3} justifyContent="center">
             <Grid item xs={6} md={3}>
@@ -50,7 +402,7 @@ export default function SkillsTab({
                   {skillsStats.overview?.totalSkills || 0}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
-                  Всего навыков
+                  {t("skills.totalSkills")}
                 </Typography>
               </Box>
             </Grid>
@@ -60,7 +412,7 @@ export default function SkillsTab({
                   {skillsStats.overview?.totalTopics || 0}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
-                  Всего тем
+                  {t("skills.totalTopics")}
                 </Typography>
               </Box>
             </Grid>
@@ -70,7 +422,7 @@ export default function SkillsTab({
                   {skillsStats.overview?.averageProgress || 0}%
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
-                  Средний прогресс
+                  {t("skills.averageProgress")}
                 </Typography>
               </Box>
             </Grid>
@@ -80,7 +432,7 @@ export default function SkillsTab({
                   {skillsStats.overview?.completedTopics || 0}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
-                  Завершенных тем
+                  {t("skills.completedTopics")}
                 </Typography>
               </Box>
             </Grid>
@@ -92,9 +444,31 @@ export default function SkillsTab({
       <Grid container spacing={3}>
         {skills && skills.length > 0 ? (
           skills.map((skill) => (
-            <Grid item xs={12} md={6} key={skill.id}>
-              <Card sx={{ height: "100%" }}>
-                <CardContent>
+            <Grid
+              item
+              xs={12}
+              md={6}
+              key={skill.id}
+              sx={{ display: "flex", minWidth: 300 }}
+            >
+              <Card
+                sx={{
+                  width: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  boxSizing: "border-box",
+                  cursor: "pointer",
+                }}
+                onClick={() => handleCardClick(skill)}
+              >
+                <CardContent
+                  sx={{
+                    flexGrow: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    minHeight: 0,
+                  }}
+                >
                   <Box
                     sx={{
                       display: "flex",
@@ -107,7 +481,15 @@ export default function SkillsTab({
                       {skill.name}
                     </Typography>
                     <Chip
-                      label={skill.category?.name || "Без категории"}
+                      label={t(
+                        `skills.categories.${(
+                          skill.category?.name || ""
+                        ).toLowerCase()}`,
+                        t(
+                          `skills.categories.${skill.category?.name}`,
+                          skill.category?.name || t("skills.noCategory")
+                        )
+                      )}
                       color="primary"
                       size="small"
                     />
@@ -132,7 +514,9 @@ export default function SkillsTab({
                         mb: 1,
                       }}
                     >
-                      <Typography variant="body2">Общий прогресс</Typography>
+                      <Typography variant="body2">
+                        {t("skills.overallProgress")}
+                      </Typography>
                       <Typography variant="body2" color="primary">
                         {skill.stats?.averageProgress || 0}%
                       </Typography>
@@ -148,7 +532,8 @@ export default function SkillsTab({
                   {skill.topics && skill.topics.length > 0 && (
                     <Box>
                       <Typography variant="subtitle2" gutterBottom>
-                        Темы ({skill.stats?.completedTopics || 0} из{" "}
+                        {t("skills.topics")} (
+                        {skill.stats?.completedTopics || 0} {t("skills.outOf")}{" "}
                         {skill.stats?.totalTopics || 0})
                       </Typography>
                       <List dense>
@@ -181,7 +566,15 @@ export default function SkillsTab({
                             />
                             {topic.status && (
                               <Chip
-                                label={topic.status.name}
+                                label={t(
+                                  `status.${(
+                                    topic.status?.name || ""
+                                  ).toLowerCase()}`,
+                                  t(
+                                    `status.${topic.status?.name}`,
+                                    topic.status?.name || ""
+                                  )
+                                )}
                                 size="small"
                                 color={
                                   topic.progress === 100 ? "success" : "default"
@@ -203,10 +596,10 @@ export default function SkillsTab({
             <Card>
               <CardContent sx={{ textAlign: "center", py: 6 }}>
                 <Typography variant="h6" color="text.secondary" gutterBottom>
-                  У вас пока нет навыков
+                  {t("skills.noSkillsYet")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Начните создавать навыки для отслеживания своего прогресса
+                  {t("skills.startCreating")}
                 </Typography>
               </CardContent>
             </Card>

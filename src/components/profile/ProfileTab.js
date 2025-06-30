@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Grid,
   Card,
@@ -29,6 +30,8 @@ export default function ProfileTab({
   errors,
   getPreviousVisit,
 }) {
+  const { t, i18n } = useTranslation();
+
   if (!userProfile) return null;
 
   return (
@@ -48,13 +51,13 @@ export default function ProfileTab({
                 mb: 2,
               }}
             >
-              <Typography variant="h6">Личная информация</Typography>
+              <Typography variant="h6">{t("profile.personalInfo")}</Typography>
               <Button
                 startIcon={editMode ? <Cancel /> : <Edit />}
                 onClick={onEditToggle}
                 color={editMode ? "secondary" : "primary"}
               >
-                {editMode ? "Отмена" : "Редактировать"}
+                {editMode ? t("profile.form.cancel") : t("profile.form.edit")}
               </Button>
             </Box>
 
@@ -62,7 +65,7 @@ export default function ProfileTab({
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Имя"
+                  label={t("profile.fields.name")}
                   name="name"
                   value={editMode ? formData.name : userProfile.user.name}
                   onChange={(e) => {
@@ -78,7 +81,7 @@ export default function ProfileTab({
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Email"
+                  label={t("profile.fields.email")}
                   name="email"
                   type="email"
                   value={editMode ? formData.email : userProfile.user.email}
@@ -102,7 +105,7 @@ export default function ProfileTab({
                 onClick={onSubmit}
                 disabled={isSubmitting}
               >
-                Сохранить
+                {t("profile.form.save")}
               </Button>
             </CardActions>
           )}
@@ -113,7 +116,7 @@ export default function ProfileTab({
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Статистика аккаунта
+              {t("profile.accountStats")}
             </Typography>
             <List>
               <ListItem>
@@ -121,10 +124,10 @@ export default function ProfileTab({
                   <Person />
                 </ListItemIcon>
                 <ListItemText
-                  primary="Дата регистрации"
+                  primary={t("profile.registrationDate")}
                   secondary={new Date(
                     userProfile.user.registrationDate
-                  ).toLocaleString("ru-Ru", {
+                  ).toLocaleString(i18n.language === "ru" ? "ru-RU" : "en-US", {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
@@ -138,45 +141,56 @@ export default function ProfileTab({
                   <History />
                 </ListItemIcon>
                 <ListItemText
-                  primary="Последний вход"
+                  primary={t("profile.lastLogin")}
                   secondary={(() => {
                     const previousVisit = getPreviousVisit();
 
                     if (!previousVisit) {
-                      return "Первое посещение";
+                      return t("profile.firstVisit");
                     }
 
                     const date = new Date(previousVisit);
                     const now = new Date();
                     const diffMs = now - date;
                     const diffMinutes = Math.floor(diffMs / (1000 * 60));
-                    const diffHours = Math.floor(
-                      diffMinutes / (1000 * 60 * 60)
-                    );
+                    const diffHours = Math.floor(diffMinutes / 60);
                     const diffDays = Math.floor(diffHours / 24);
 
                     if (diffMinutes < 1) {
-                      return "Только что";
+                      return t("profile.justNow");
                     } else if (diffHours < 1) {
-                      return `${diffMinutes} мин. назад`;
+                      return t("profile.minutesAgo", { count: diffMinutes });
                     } else if (diffDays === 0) {
-                      return `Сегодня в ${date.toLocaleTimeString("ru-RU", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}`;
-                    } else if (diffDays === 1) {
-                      return `Вчера в ${date.toLocaleTimeString("ru-RU", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}`;
-                    } else {
-                      return date.toLocaleString("ru-RU", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
+                      return t("profile.todayAt", {
+                        time: date.toLocaleTimeString(
+                          i18n.language === "ru" ? "ru-RU" : "en-US",
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        ),
                       });
+                    } else if (diffDays === 1) {
+                      return t("profile.yesterdayAt", {
+                        time: date.toLocaleTimeString(
+                          i18n.language === "ru" ? "ru-RU" : "en-US",
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        ),
+                      });
+                    } else {
+                      return date.toLocaleString(
+                        i18n.language === "ru" ? "ru-RU" : "en-US",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      );
                     }
                   })()}
                 />

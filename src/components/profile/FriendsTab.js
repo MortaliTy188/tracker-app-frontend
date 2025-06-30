@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Box,
   Typography,
@@ -42,12 +43,15 @@ export default function FriendsTab({
   onAcceptFriendRequest,
   onDeclineFriendRequest,
   onRemoveFriend,
+  onOpenChat, // Новый параметр для открытия чата
   showSuccess,
   showError,
   loadFriends,
   loadPendingRequests,
   loadSentRequests,
 }) {
+  const { t, i18n } = useTranslation();
+
   if (friendshipLoading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
@@ -68,7 +72,7 @@ export default function FriendsTab({
         }}
       >
         <Typography variant="h5" gutterBottom>
-          👥 Мои друзья
+          👥 {t("friends.myFriends")}
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Button
@@ -76,7 +80,7 @@ export default function FriendsTab({
             startIcon={<PersonAdd />}
             onClick={onFindFriendsOpen}
           >
-            Найти друзей
+            {t("profile.friends.findFriends")}
           </Button>
           {sentRequests && sentRequests.length > 0 && (
             <Button
@@ -85,14 +89,14 @@ export default function FriendsTab({
               startIcon={<Send />}
               onClick={onSentRequestsOpen}
             >
-              Исходящие запросы ({sentRequests.length})
+              {t("profile.friends.sentRequests")} ({sentRequests.length})
             </Button>
           )}
           {pendingRequests && pendingRequests.length > 0 && (
             <Badge badgeContent={pendingRequests.length} color="warning">
               <Chip
                 icon={<Notifications />}
-                label="Новые запросы"
+                label={t("friends.newRequests")}
                 color="warning"
                 variant="outlined"
               />
@@ -123,7 +127,9 @@ export default function FriendsTab({
                 }}
               >
                 <Typography variant="body1" component="span">
-                  У вас {pendingRequests.length} новых запросов на дружбу
+                  {t("friends.newRequestsCount", {
+                    count: pendingRequests.length,
+                  })}
                 </Typography>
               </Box>
             </Alert>
@@ -131,7 +137,7 @@ export default function FriendsTab({
             <Card sx={{ mb: 3 }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Входящие запросы на дружбу
+                  {t("friends.incomingRequests")}
                 </Typography>
                 <List>
                   {pendingRequests.map((request) => (
@@ -163,10 +169,14 @@ export default function FriendsTab({
                             : request.requester.username ||
                               request.requester.name
                         }
-                        secondary={`Уровень ${
+                        secondary={`${t("stats.level").replace(":", "")} ${
                           request.requester.level
+                            ? t(`stats.levels.${request.requester.level}`, {
+                                defaultValue: request.requester.level,
+                              })
+                            : t("stats.beginner")
                         } • ${new Date(request.requestDate).toLocaleDateString(
-                          "ru-RU"
+                          i18n.language === "ru" ? "ru-RU" : "en-US"
                         )}`}
                       />
                       <Box>
@@ -176,7 +186,11 @@ export default function FriendsTab({
                             onAcceptFriendRequest(request.friendshipId).then(
                               (result) => {
                                 if (result.success) {
-                                  showSuccess("Запрос принят");
+                                  showSuccess(
+                                    t(
+                                      "profile.friends.messages.requestAccepted"
+                                    )
+                                  );
                                   loadFriends();
                                   loadPendingRequests();
                                   loadSentRequests(); // Обновить исходящие запросы на случай взаимного запроса
@@ -186,7 +200,7 @@ export default function FriendsTab({
                               }
                             )
                           }
-                          title="Принять"
+                          title={t("profile.friends.actions.accept")}
                         >
                           <Check />
                         </IconButton>
@@ -196,7 +210,11 @@ export default function FriendsTab({
                             onDeclineFriendRequest(request.friendshipId).then(
                               (result) => {
                                 if (result.success) {
-                                  showSuccess("Запрос отклонен");
+                                  showSuccess(
+                                    t(
+                                      "profile.friends.messages.requestDeclined"
+                                    )
+                                  );
                                   loadPendingRequests();
                                 } else {
                                   showError(result.message);
@@ -204,7 +222,7 @@ export default function FriendsTab({
                               }
                             )
                           }
-                          title="Отклонить"
+                          title={t("profile.friends.actions.decline")}
                         >
                           <Close />
                         </IconButton>
@@ -229,9 +247,11 @@ export default function FriendsTab({
                   mb: 2,
                 }}
               >
-                <Typography variant="h6">Список друзей</Typography>
+                <Typography variant="h6">{t("friends.friendsList")}</Typography>
                 <Chip
-                  label={`${friends?.length || 0} друзей`}
+                  label={t("friends.friendsCount", {
+                    count: friends?.length || 0,
+                  })}
                   color="primary"
                   variant="outlined"
                 />
@@ -247,17 +267,17 @@ export default function FriendsTab({
                 >
                   <People sx={{ fontSize: 64, mb: 2, opacity: 0.5 }} />
                   <Typography variant="h6" gutterBottom>
-                    У вас пока нет друзей
+                    {t("friends.noFriendsYet")}
                   </Typography>
                   <Typography variant="body2" sx={{ mb: 3 }}>
-                    Найдите пользователей и отправьте им запросы на дружбу
+                    {t("friends.findAndSendRequests")}
                   </Typography>
                   <Button
                     variant="outlined"
                     startIcon={<PersonAdd />}
                     onClick={onFindFriendsOpen}
                   >
-                    Найти друзей
+                    {t("profile.friends.findFriends")}
                   </Button>
                 </Box>
               ) : (
@@ -314,7 +334,16 @@ export default function FriendsTab({
                                 }}
                               >
                                 <Chip
-                                  label={`Уровень ${friend.level}`}
+                                  label={`${t("stats.level").replace(
+                                    ":",
+                                    ""
+                                  )} ${
+                                    friend.level
+                                      ? t(`stats.levels.${friend.level}`, {
+                                          defaultValue: friend.level,
+                                        })
+                                      : t("stats.beginner")
+                                  }`}
                                   size="small"
                                   color="primary"
                                   variant="outlined"
@@ -328,9 +357,9 @@ export default function FriendsTab({
                             color="text.secondary"
                             sx={{ display: "block", mb: 2 }}
                           >
-                            Друзья с{" "}
+                            {t("friends.friendsSince")}{" "}
                             {new Date(friend.friendsSince).toLocaleDateString(
-                              "ru-RU"
+                              i18n.language === "ru" ? "ru-RU" : "en-US"
                             )}
                           </Typography>
                         </CardContent>
@@ -346,12 +375,9 @@ export default function FriendsTab({
                             size="small"
                             startIcon={<Message />}
                             variant="outlined"
-                            onClick={() => {
-                              // Здесь можно добавить функцию отправки сообщения
-                              showSuccess("Функция чата будет добавлена позже");
-                            }}
+                            onClick={() => onOpenChat(friend)}
                           >
-                            Написать
+                            {t("friends.writeMessage")}
                           </Button>
                           <Button
                             size="small"
@@ -359,17 +385,18 @@ export default function FriendsTab({
                             onClick={() => {
                               if (
                                 window.confirm(
-                                  `Вы уверены, что хотите удалить ${
-                                    friend.firstName && friend.lastName
-                                      ? `${friend.firstName} ${friend.lastName}`
-                                      : friend.username || friend.name
-                                  } из друзей?`
+                                  t("friends.removeFriendConfirm", {
+                                    name:
+                                      friend.firstName && friend.lastName
+                                        ? `${friend.firstName} ${friend.lastName}`
+                                        : friend.username || friend.name,
+                                  })
                                 )
                               ) {
                                 onRemoveFriend(friend.friendshipId).then(
                                   (result) => {
                                     if (result.success) {
-                                      showSuccess("Друг удален");
+                                      showSuccess(t("friends.friendRemoved"));
                                       loadFriends();
                                     } else {
                                       showError(result.message);
@@ -379,7 +406,7 @@ export default function FriendsTab({
                               }
                             }}
                           >
-                            Удалить
+                            {t("friends.remove")}
                           </Button>
                         </CardActions>
                       </Card>

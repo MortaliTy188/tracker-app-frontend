@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   useAuth,
   useSnackbar,
@@ -82,10 +83,12 @@ import {
   Legend,
 } from "recharts";
 import Navbar from "../components/Navbar";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const theme = useTheme();
+  const { t, i18n } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { showError, showSuccess } = useSnackbar();
 
@@ -184,7 +187,7 @@ export default function DashboardPage() {
     setRefreshing(true);
     await loadDashboardData();
     setRefreshing(false);
-    showSuccess("Данные обновлены");
+    showSuccess(t("dashboard.dataUpdated"));
   };
 
   // Process data for dashboard when hooks data changes
@@ -384,6 +387,89 @@ export default function DashboardPage() {
     }).length;
   };
 
+  // Helper function to translate activity actions
+  const translateAction = (action, details = {}) => {
+    // Try to translate the action
+    const translationKey = `activity.actions.${action}`;
+    let translated = t(translationKey);
+
+    // If translation exists and is different from the key, use it
+    if (translated !== translationKey) {
+      // For complex actions, add details
+      switch (action) {
+        case "ACHIEVEMENT_EARNED":
+          if (details?.achievementTitle || details?.achievementName) {
+            return `${translated}: ${
+              details.achievementTitle || details.achievementName
+            }`;
+          }
+          break;
+        case "NOTE_CREATED":
+        case "NOTE_UPDATED":
+        case "NOTE_DELETED":
+          if (details?.noteTitle || details?.title) {
+            return `${translated}: ${details.noteTitle || details.title}`;
+          }
+          break;
+        case "TOPIC_CREATED":
+        case "TOPIC_UPDATED":
+        case "TOPIC_COMPLETED":
+          if (details?.topicTitle || details?.topicName || details?.name) {
+            return `${translated}: ${
+              details.topicTitle || details.topicName || details.name
+            }`;
+          }
+          break;
+        case "SKILL_CREATED":
+        case "SKILL_UPDATED":
+        case "SKILL_DELETED":
+          if (details?.skillTitle || details?.skillName || details?.name) {
+            return `${translated}: ${
+              details.skillTitle || details.skillName || details.name
+            }`;
+          }
+          break;
+        case "EMAIL_CHANGE":
+          if (details?.newEmail) {
+            return `${translated} ${t("activity.to")} ${details.newEmail}`;
+          }
+          break;
+        case "USERNAME_CHANGE":
+          if (details?.newUsername) {
+            return `${translated} ${t("activity.to")} ${details.newUsername}`;
+          }
+          break;
+        case "FEEDBACK_SUBMITTED":
+          if (details?.subject) {
+            return `${translated}: ${details.subject}`;
+          }
+          break;
+        case "FRIEND_REQUEST_SENT":
+          if (details?.addresseeName) {
+            return `${translated} ${t("activity.to")} ${details.addresseeName}`;
+          }
+          break;
+        case "FRIEND_REQUEST_ACCEPTED":
+        case "FRIEND_REQUEST_DECLINED":
+          if (details?.requesterName) {
+            return `${translated} ${t("activity.from")} ${
+              details.requesterName
+            }`;
+          }
+          break;
+        case "FRIEND_REMOVED":
+          if (details?.friendName) {
+            return `${translated}: ${details.friendName}`;
+          }
+          break;
+      }
+      return translated;
+    }
+
+    // Otherwise use fallback
+    return t("activity.actionPerformed");
+  };
+
   // Navigation helpers
   const handleQuickAction = (action) => {
     switch (action) {
@@ -392,19 +478,15 @@ export default function DashboardPage() {
         break;
       case "newSkill":
         navigate("/profile");
-        showSuccess("Перейдите во вкладку 'Навыки' для создания нового навыка");
+        showSuccess(t("navigation.goToSkills"));
         break;
       case "newNote":
         navigate("/profile");
-        showSuccess(
-          "Перейдите во вкладку 'Заметки' для создания новой заметки"
-        );
+        showSuccess(t("navigation.goToNotes"));
         break;
       case "stats":
         navigate("/profile");
-        showSuccess(
-          "Перейдите во вкладку 'Активность' для просмотра статистики"
-        );
+        showSuccess(t("navigation.goToActivity"));
         break;
       default:
         break;
@@ -423,10 +505,10 @@ export default function DashboardPage() {
       <Container maxWidth="sm" sx={{ mt: 4 }}>
         <Paper sx={{ p: 3, textAlign: "center" }}>
           <Typography variant="h6" color="text.secondary">
-            Для доступа к панели управления необходимо авторизоваться
+            {t("auth.loginRequired")}
           </Typography>
           <Button href="/login" variant="contained" sx={{ mt: 2 }}>
-            Войти в систему
+            {t("auth.loginButton")}
           </Button>
         </Paper>
       </Container>
@@ -459,36 +541,45 @@ export default function DashboardPage() {
           >
             <Box sx={{ textAlign: "center" }}>
               <Typography variant="h4" gutterBottom>
-                Панель управления
+                {t("dashboard.title")}
               </Typography>
               <Typography variant="body1" color="text.secondary">
                 {profileData?.user?.name
-                  ? `Добро пожаловать, ${profileData.user.name}!`
-                  : "Добро пожаловать!"}
+                  ? t("dashboard.welcomeWithName", {
+                      name: profileData.user.name,
+                    })
+                  : t("dashboard.welcome")}
                 {dashboardData.activity.lastActive &&
-                  ` Последняя активность: ${new Date(
-                    dashboardData.activity.lastActive
-                  ).toLocaleString("ru-RU")}`}
+                  ` ${t("dashboard.lastActivity", {
+                    date: new Date(
+                      dashboardData.activity.lastActive
+                    ).toLocaleString(
+                      i18n.language === "ru" ? "ru-RU" : "en-US"
+                    ),
+                  })}`}
               </Typography>
             </Box>
-            <IconButton
-              onClick={handleRefresh}
-              disabled={refreshing}
-              sx={{
-                position: "absolute",
-                right: 0,
-                bgcolor: "primary.main",
-                color: "white",
-                "&:hover": { bgcolor: "primary.dark" },
-                "&:disabled": { bgcolor: "grey.300" },
-              }}
+            <Box
+              sx={{ position: "absolute", right: 0, display: "flex", gap: 1 }}
             >
-              {refreshing ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : (
-                <Refresh />
-              )}
-            </IconButton>
+              <LanguageSwitcher variant="select" />
+              <IconButton
+                onClick={handleRefresh}
+                disabled={refreshing}
+                sx={{
+                  bgcolor: "primary.main",
+                  color: "white",
+                  "&:hover": { bgcolor: "primary.dark" },
+                  "&:disabled": { bgcolor: "grey.300" },
+                }}
+              >
+                {refreshing ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  <Refresh />
+                )}
+              </IconButton>
+            </Box>
           </Box>
 
           {/* Quick Stats Cards - Centered */}
@@ -519,7 +610,7 @@ export default function DashboardPage() {
                       </Typography>
                     )}
                     <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                      Навыков изучается
+                      {t("stats.skillsStudying")}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -550,7 +641,7 @@ export default function DashboardPage() {
                       </Typography>
                     )}
                     <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                      Тем завершено
+                      {t("stats.topicsCompleted")}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -581,7 +672,7 @@ export default function DashboardPage() {
                       </Typography>
                     )}
                     <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                      Заметок создано
+                      {t("stats.notesCreated")}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -614,7 +705,7 @@ export default function DashboardPage() {
                       </Typography>
                     )}
                     <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                      Дней подряд
+                      {t("stats.daysInRow")}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -639,9 +730,11 @@ export default function DashboardPage() {
                   mb: 2,
                 }}
               >
-                <Typography variant="h6">Активность за неделю</Typography>
+                <Typography variant="h6">{t("activity.title")}</Typography>
                 <Chip
-                  label={`Сегодня: ${dashboardData.quickStats.todayActivity} действий`}
+                  label={t("stats.todayActions", {
+                    count: dashboardData.quickStats.todayActivity,
+                  })}
                   color="primary"
                   size="small"
                 />
@@ -662,7 +755,7 @@ export default function DashboardPage() {
                       stackId="1"
                       stroke={theme.palette.primary.main}
                       fill={alpha(theme.palette.primary.main, 0.6)}
-                      name="Общая активность"
+                      name={t("activity.generalActivity")}
                     />
                     <Area
                       type="monotone"
@@ -670,7 +763,7 @@ export default function DashboardPage() {
                       stackId="2"
                       stroke={theme.palette.warning.main}
                       fill={alpha(theme.palette.warning.main, 0.6)}
-                      name="Заметки"
+                      name={t("activity.notes")}
                     />
                     <Area
                       type="monotone"
@@ -678,7 +771,7 @@ export default function DashboardPage() {
                       stackId="3"
                       stroke={theme.palette.success.main}
                       fill={alpha(theme.palette.success.main, 0.6)}
-                      name="Навыки"
+                      name={t("activity.skills")}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -689,7 +782,12 @@ export default function DashboardPage() {
           <Grid
             container
             spacing={3}
-            sx={{ width: "100%", margin: 0, marginTop: 0 }}
+            sx={{
+              width: "100%",
+              margin: 0,
+              marginTop: 0,
+              justifyContent: "space-between",
+            }}
           >
             {/* Left Column - Activity Only */}
             <Grid item xs={12} lg={4}>
@@ -712,7 +810,7 @@ export default function DashboardPage() {
                     sx={{ display: "flex", alignItems: "center" }}
                   >
                     <Timeline sx={{ mr: 1, color: "info.main" }} />
-                    Последняя активность
+                    {t("activity.recentActivity")}
                   </Typography>
                   <Box sx={{ flex: 1, overflow: "auto" }}>
                     {activityLoading ? (
@@ -763,9 +861,10 @@ export default function DashboardPage() {
                             <ListItemText
                               primary={
                                 <Typography variant="body2" fontWeight="medium">
-                                  {activity.description ||
-                                    activity.action ||
-                                    "Действие выполнено"}
+                                  {translateAction(
+                                    activity.action,
+                                    activity.details
+                                  )}
                                 </Typography>
                               }
                               secondary={
@@ -775,7 +874,9 @@ export default function DashboardPage() {
                                 >
                                   {new Date(
                                     activity.date || activity.created_at
-                                  ).toLocaleString("ru-RU")}
+                                  ).toLocaleString(
+                                    i18n.language === "ru" ? "ru-RU" : "en-US"
+                                  )}
                                 </Typography>
                               }
                             />
@@ -784,7 +885,7 @@ export default function DashboardPage() {
                       </List>
                     ) : (
                       <Alert severity="info" size="small">
-                        Пока нет активности для отображения
+                        {t("activity.noActivity")}
                       </Alert>
                     )}
                   </Box>
@@ -799,6 +900,126 @@ export default function DashboardPage() {
               lg={8}
               sx={{ display: "flex", flexDirection: "column", gap: 3 }}
             >
+              {/* Quick Actions - Full Container Width */}
+              <Card
+                sx={{
+                  boxShadow: theme.shadows[2],
+                  borderRadius: 2,
+                }}
+              >
+                <CardContent>
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    sx={{ display: "flex", alignItems: "center" }}
+                  >
+                    <AutoAwesome sx={{ mr: 1, color: "secondary.main" }} />
+                    {t("quickActions.title")}
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6} lg={3}>
+                      <Button
+                        variant="contained"
+                        startIcon={<Psychology />}
+                        fullWidth
+                        onClick={() => handleQuickAction("newSkill")}
+                      >
+                        {t("quickActions.newSkill")}
+                      </Button>
+                    </Grid>
+                    <Grid item xs={12} sm={6} lg={3}>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Lightbulb />}
+                        fullWidth
+                        onClick={() => handleQuickAction("newNote")}
+                      >
+                        {t("quickActions.addNote")}
+                      </Button>
+                    </Grid>
+                    <Grid item xs={12} sm={6} lg={3}>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Person />}
+                        fullWidth
+                        onClick={() => handleQuickAction("profile")}
+                      >
+                        {t("quickActions.myProfile")}
+                      </Button>
+                    </Grid>
+                    <Grid item xs={12} sm={6} lg={3}>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Timeline />}
+                        fullWidth
+                        onClick={() => handleQuickAction("stats")}
+                      >
+                        {t("quickActions.detailedStats")}
+                      </Button>
+                    </Grid>
+                  </Grid>
+
+                  {/* Additional Stats */}
+                  <Box
+                    sx={{
+                      mt: 3,
+                      pt: 2,
+                      borderTop: 1,
+                      borderColor: "divider",
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
+                      {t("quickActions.quickStats")}
+                    </Typography>
+                    <Grid container spacing={2} justifyContent="center">
+                      <Grid item xs={12} sm={4}>
+                        <Box sx={{ textAlign: "center" }}>
+                          <Typography variant="caption">
+                            {t("stats.weeklyGoal")}
+                          </Typography>
+                          <Typography variant="h6" fontWeight="bold">
+                            {dashboardData.quickStats.weeklyGoals}{" "}
+                            {t("quickActions.skillsGoal")}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={4}>
+                        <Box sx={{ textAlign: "center" }}>
+                          <Typography variant="caption">
+                            {t("stats.notesThisWeek")}
+                          </Typography>
+                          <Typography variant="h6" fontWeight="bold">
+                            {notesStats?.thisWeek || 0}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={4}>
+                        <Box sx={{ textAlign: "center" }}>
+                          <Typography variant="caption">
+                            {t("stats.level")}
+                          </Typography>
+                          <Typography
+                            variant="h6"
+                            fontWeight="bold"
+                            color="primary.main"
+                          >
+                            {profileData?.user?.level
+                              ? t(`stats.levels.${profileData.user.level}`, {
+                                  defaultValue: profileData.user.level,
+                                })
+                              : t("stats.beginner")}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                </CardContent>
+              </Card>
+
               {/* Skills Progress - Full Container Width */}
               <Card
                 sx={{
@@ -808,7 +1029,7 @@ export default function DashboardPage() {
               >
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    Прогресс по навыкам
+                    {t("skills.title")}
                   </Typography>
                   {isLoadingData ? (
                     <Box>
@@ -824,66 +1045,109 @@ export default function DashboardPage() {
                       ))}
                     </Box>
                   ) : dashboardData.charts.skillsProgress.length > 0 ? (
-                    <Grid container spacing={2}>
+                    <Box
+                      sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                    >
                       {dashboardData.charts.skillsProgress.map(
                         (skill, index) => (
-                          <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
-                            <Box sx={{ mb: 2 }}>
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                  mb: 1,
-                                }}
-                              >
-                                <Typography variant="body1" fontWeight="medium">
-                                  {skill.name}
-                                </Typography>
-                                <Typography
-                                  variant="body2"
-                                  color="text.secondary"
-                                >
-                                  {skill.completed}/{skill.total}
-                                </Typography>
-                              </Box>
-                              <LinearProgress
-                                variant="determinate"
-                                value={skill.progress}
-                                sx={{
-                                  height: 10,
-                                  borderRadius: 5,
-                                  bgcolor: alpha(theme.palette.grey[300], 0.3),
-                                  "& .MuiLinearProgress-bar": {
-                                    borderRadius: 5,
-                                    bgcolor:
-                                      skill.progress > 75
-                                        ? theme.palette.success.main
-                                        : skill.progress > 50
-                                        ? theme.palette.warning.main
-                                        : theme.palette.info.main,
-                                  },
-                                }}
-                              />
+                          <Box key={index} sx={{ width: "100%" }}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                mb: 1,
+                              }}
+                            >
+                              <Typography variant="body1" fontWeight="medium">
+                                {skill.name}
+                              </Typography>
                               <Typography
-                                variant="caption"
+                                variant="body2"
                                 color="text.secondary"
-                                sx={{ mt: 0.5, display: "block" }}
                               >
-                                {skill.progress}% завершено
+                                {skill.completed}/{skill.total}
                               </Typography>
                             </Box>
-                          </Grid>
+                            <LinearProgress
+                              variant="determinate"
+                              value={skill.progress}
+                              sx={{
+                                height: 10,
+                                borderRadius: 5,
+                                bgcolor: alpha(theme.palette.grey[300], 0.3),
+                                "& .MuiLinearProgress-bar": {
+                                  borderRadius: 5,
+                                  bgcolor:
+                                    skill.progress > 75
+                                      ? theme.palette.success.main
+                                      : skill.progress > 50
+                                      ? theme.palette.warning.main
+                                      : theme.palette.info.main,
+                                },
+                              }}
+                            />
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ mt: 0.5, display: "block" }}
+                            >
+                              {skill.progress}% {t("skills.completed")}
+                            </Typography>
+                          </Box>
                         )
                       )}
-                    </Grid>
+                    </Box>
                   ) : (
-                    <Alert severity="info">
-                      Навыки пока не созданы. Создайте свой первый навык!
-                    </Alert>
+                    <Alert severity="info">{t("skills.noSkills")}</Alert>
                   )}
                 </CardContent>
               </Card>
+
+              {/* Category Distribution - Full Container Width */}
+              {dashboardData.charts.categoryDistribution.length > 0 && (
+                <Card
+                  sx={{
+                    boxShadow: theme.shadows[2],
+                    borderRadius: 2,
+                  }}
+                >
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      {t("skills.categoriesTitle")}
+                    </Typography>
+                    {isLoadingData ? (
+                      <Skeleton variant="rectangular" height={200} />
+                    ) : (
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie
+                            data={dashboardData.charts.categoryDistribution}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent }) =>
+                              `${t(`skills.categories.${name.toLowerCase()}`, t(`skills.categories.${name}`, name))} ${(percent * 100).toFixed(0)}%`
+                            }
+                          >
+                            {dashboardData.charts.categoryDistribution.map(
+                              (entry, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={COLORS[index % COLORS.length]}
+                                />
+                              )
+                            )}
+                          </Pie>
+                          <RechartsTooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Achievements - Full Container Width */}
               <Card
@@ -899,7 +1163,7 @@ export default function DashboardPage() {
                     sx={{ display: "flex", alignItems: "center" }}
                   >
                     <EmojiEvents sx={{ mr: 1, color: "primary.main" }} />
-                    Достижения
+                    {t("achievements.title")}
                   </Typography>
                   {achievementsLoading ? (
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -953,15 +1217,20 @@ export default function DashboardPage() {
                           fontWeight="medium"
                           gutterBottom
                         >
-                          {achievementsStats.completedAchievements}/
-                          {achievementsStats.totalAchievements} достижений
+                          {achievementsStats.completedAchievements}
+                          {t("achievements.outOf")}
+                          {achievementsStats.totalAchievements}{" "}
+                          {t("achievements.completed")}
                         </Typography>
                         <Typography variant="h5" color="primary" gutterBottom>
-                          {achievementsStats.earnedPoints} очков
+                          {achievementsStats.earnedPoints}{" "}
+                          {t("achievements.points")}
                         </Typography>
                         {dashboardData.quickStats.monthlyProgress > 0 && (
                           <Chip
-                            label={`+${dashboardData.quickStats.monthlyProgress} в этом месяце`}
+                            label={t("achievements.thisMonth", {
+                              count: dashboardData.quickStats.monthlyProgress,
+                            })}
                             color="success"
                             size="small"
                           />
@@ -970,167 +1239,9 @@ export default function DashboardPage() {
                     </Box>
                   ) : (
                     <Alert severity="info" size="small">
-                      Достижения пока не загружены
+                      {t("achievements.notLoaded")}
                     </Alert>
                   )}
-                </CardContent>
-              </Card>
-
-              {/* Category Distribution - Full Container Width */}
-              {dashboardData.charts.categoryDistribution.length > 0 && (
-                <Card
-                  sx={{
-                    boxShadow: theme.shadows[2],
-                    borderRadius: 2,
-                  }}
-                >
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Распределение по категориям
-                    </Typography>
-                    {isLoadingData ? (
-                      <Skeleton variant="rectangular" height={200} />
-                    ) : (
-                      <ResponsiveContainer width="100%" height={200}>
-                        <PieChart>
-                          <Pie
-                            data={dashboardData.charts.categoryDistribution}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                            label={({ name, percent }) =>
-                              `${name} ${(percent * 100).toFixed(0)}%`
-                            }
-                          >
-                            {dashboardData.charts.categoryDistribution.map(
-                              (entry, index) => (
-                                <Cell
-                                  key={`cell-${index}`}
-                                  fill={COLORS[index % COLORS.length]}
-                                />
-                              )
-                            )}
-                          </Pie>
-                          <RechartsTooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Quick Actions - Full Container Width */}
-              <Card
-                sx={{
-                  boxShadow: theme.shadows[2],
-                  borderRadius: 2,
-                }}
-              >
-                <CardContent>
-                  <Typography
-                    variant="h6"
-                    gutterBottom
-                    sx={{ display: "flex", alignItems: "center" }}
-                  >
-                    <AutoAwesome sx={{ mr: 1, color: "secondary.main" }} />
-                    Быстрые действия
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6} lg={3}>
-                      <Button
-                        variant="contained"
-                        startIcon={<Psychology />}
-                        fullWidth
-                        onClick={() => handleQuickAction("newSkill")}
-                      >
-                        Новый навык
-                      </Button>
-                    </Grid>
-                    <Grid item xs={12} sm={6} lg={3}>
-                      <Button
-                        variant="outlined"
-                        startIcon={<Lightbulb />}
-                        fullWidth
-                        onClick={() => handleQuickAction("newNote")}
-                      >
-                        Добавить заметку
-                      </Button>
-                    </Grid>
-                    <Grid item xs={12} sm={6} lg={3}>
-                      <Button
-                        variant="outlined"
-                        startIcon={<Person />}
-                        fullWidth
-                        onClick={() => handleQuickAction("profile")}
-                      >
-                        Мой профиль
-                      </Button>
-                    </Grid>
-                    <Grid item xs={12} sm={6} lg={3}>
-                      <Button
-                        variant="outlined"
-                        startIcon={<Timeline />}
-                        fullWidth
-                        onClick={() => handleQuickAction("stats")}
-                      >
-                        Подробная статистика
-                      </Button>
-                    </Grid>
-                  </Grid>
-
-                  {/* Additional Stats */}
-                  <Box
-                    sx={{
-                      mt: 3,
-                      pt: 2,
-                      borderTop: 1,
-                      borderColor: "divider",
-                    }}
-                  >
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      gutterBottom
-                    >
-                      Быстрая статистика
-                    </Typography>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={4}>
-                        <Box sx={{ textAlign: "center" }}>
-                          <Typography variant="caption">
-                            Недельная цель:
-                          </Typography>
-                          <Typography variant="h6" fontWeight="bold">
-                            {dashboardData.quickStats.weeklyGoals} навыков
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <Box sx={{ textAlign: "center" }}>
-                          <Typography variant="caption">
-                            Заметки за неделю:
-                          </Typography>
-                          <Typography variant="h6" fontWeight="bold">
-                            {notesStats?.thisWeek || 0}
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <Box sx={{ textAlign: "center" }}>
-                          <Typography variant="caption">Уровень:</Typography>
-                          <Typography
-                            variant="h6"
-                            fontWeight="bold"
-                            color="primary.main"
-                          >
-                            {profileData?.user?.level || "Новичок"}
-                          </Typography>
-                        </Box>
-                      </Grid>
-                    </Grid>
-                  </Box>
                 </CardContent>
               </Card>
             </Grid>

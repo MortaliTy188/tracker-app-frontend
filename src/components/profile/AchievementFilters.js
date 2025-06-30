@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Box,
   Typography,
@@ -28,6 +29,8 @@ const AchievementFilters = ({
   translateCategory,
   translateRarity,
 }) => {
+  const { t } = useTranslation();
+
   const hasActiveFilters =
     achievementFilter !== "all" ||
     categoryFilter !== "all" ||
@@ -43,37 +46,42 @@ const AchievementFilters = ({
     <Paper sx={{ p: 3, height: "fit-content" }}>
       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
         <FilterList sx={{ mr: 1 }} />
-        <Typography variant="h6">Фильтры</Typography>
+        <Typography variant="h6">{t("achievements.filters.title")}</Typography>
       </Box>
 
       {/* Completion Status Filter */}
       <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-        <InputLabel>Статус выполнения</InputLabel>
+        <InputLabel>{t("achievements.filters.completionStatus")}</InputLabel>
         <Select
           value={achievementFilter}
-          label="Статус выполнения"
+          label={t("achievements.filters.completionStatus")}
           onChange={(e) => onAchievementFilterChange(e.target.value)}
         >
-          <MenuItem value="all">Все достижения</MenuItem>
+          <MenuItem value="all">
+            {t("profile.achievements.filters.all")}
+          </MenuItem>
           <MenuItem value="completed">
             <CheckCircle sx={{ mr: 1, fontSize: 18 }} />
-            Выполненные
+            {t("profile.achievements.filters.completed")}
           </MenuItem>
           <MenuItem value="incomplete">
-            <RadioButtonUnchecked sx={{ mr: 1, fontSize: 18 }} />В процессе
+            <RadioButtonUnchecked sx={{ mr: 1, fontSize: 18 }} />
+            {t("profile.achievements.filters.incomplete")}
           </MenuItem>
         </Select>
       </FormControl>
 
       {/* Category Filter */}
       <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-        <InputLabel>Категория</InputLabel>
+        <InputLabel>{t("achievements.filters.category")}</InputLabel>
         <Select
           value={categoryFilter}
-          label="Категория"
+          label={t("achievements.filters.category")}
           onChange={(e) => onCategoryFilterChange(e.target.value)}
         >
-          <MenuItem value="all">Все категории</MenuItem>
+          <MenuItem value="all">
+            {t("achievements.filters.allCategories")}
+          </MenuItem>
           {getUniqueCategories().map((category) => (
             <MenuItem key={category} value={category}>
               {translateCategory(category)}
@@ -84,13 +92,13 @@ const AchievementFilters = ({
 
       {/* Rarity Filter */}
       <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-        <InputLabel>Редкость</InputLabel>
+        <InputLabel>{t("achievements.filters.rarity")}</InputLabel>
         <Select
           value={rarityFilter}
-          label="Редкость"
+          label={t("achievements.filters.rarity")}
           onChange={(e) => onRarityFilterChange(e.target.value)}
         >
-          <MenuItem value="all">Любая редкость</MenuItem>
+          <MenuItem value="all">{t("achievements.filters.anyRarity")}</MenuItem>
           {getUniqueRarities().map((rarity) => (
             <MenuItem key={rarity} value={rarity}>
               {translateRarity(rarity)}
@@ -103,8 +111,10 @@ const AchievementFilters = ({
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
         {achievementFilter !== "all" && (
           <Chip
-            label={`Статус: ${
-              achievementFilter === "completed" ? "Выполненные" : "В процессе"
+            label={`${t("achievements.filters.status")}: ${
+              achievementFilter === "completed"
+                ? t("profile.achievements.filters.completed")
+                : t("profile.achievements.filters.incomplete")
             }`}
             onDelete={() => onAchievementFilterChange("all")}
             color="primary"
@@ -113,7 +123,9 @@ const AchievementFilters = ({
         )}
         {categoryFilter !== "all" && (
           <Chip
-            label={`Категория: ${translateCategory(categoryFilter)}`}
+            label={`${t("achievements.filters.category")}: ${translateCategory(
+              categoryFilter
+            )}`}
             onDelete={() => onCategoryFilterChange("all")}
             color="secondary"
             size="small"
@@ -121,7 +133,9 @@ const AchievementFilters = ({
         )}
         {rarityFilter !== "all" && (
           <Chip
-            label={`Редкость: ${translateRarity(rarityFilter)}`}
+            label={`${t("achievements.filters.rarity")}: ${translateRarity(
+              rarityFilter
+            )}`}
             onDelete={() => onRarityFilterChange("all")}
             color="info"
             size="small"
@@ -137,7 +151,7 @@ const AchievementFilters = ({
           fullWidth
           onClick={resetAllFilters}
         >
-          Сбросить все фильтры
+          {t("achievements.filters.resetAll")}
         </Button>
       )}
     </Paper>

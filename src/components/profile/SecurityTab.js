@@ -1,10 +1,13 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Grid, Card, CardContent, Typography, Button } from "@mui/material";
 
 /**
  * Компонент вкладки безопасности
  */
 export default function SecurityTab({ onChangePasswordOpen }) {
+  const { t } = useTranslation();
+
   return (
     <Grid
       container
@@ -16,13 +19,13 @@ export default function SecurityTab({ onChangePasswordOpen }) {
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Безопасность аккаунта
+              {t("security.accountSecurity")}
             </Typography>
             <Typography variant="body2" color="textSecondary" paragraph>
-              Управление паролем и настройками безопасности
+              {t("security.passwordAndSettings")}
             </Typography>
             <Button variant="contained" onClick={onChangePasswordOpen}>
-              Изменить пароль
+              {t("profile.security.changePassword")}
             </Button>
           </CardContent>
         </Card>
@@ -32,13 +35,13 @@ export default function SecurityTab({ onChangePasswordOpen }) {
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Двухфакторная аутентификация
+              {t("security.twoFactorAuth")}
             </Typography>
             <Typography variant="body2" color="textSecondary" paragraph>
-              Дополнительный уровень защиты для вашего аккаунта
+              {t("security.additionalProtection")}
             </Typography>
             <Button variant="outlined" disabled>
-              Настроить 2FA (скоро)
+              {t("security.setup2FA")}
             </Button>
           </CardContent>
         </Card>

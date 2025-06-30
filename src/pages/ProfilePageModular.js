@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useAuth,
   useProfile,
@@ -66,23 +67,24 @@ import {
   NoteDialog,
   PasswordChangeDialog,
 } from "../components/profile";
+import ChatDialog from "../components/chat/ChatDialog";
 import { getAvatarUrl } from "../utils/avatarUtils";
 
 // Utility functions
-const getStatusLabel = (status) => {
+const getStatusLabel = (status, t) => {
   switch (status) {
     case "success":
-      return "Успешно";
+      return t("profile.status.success");
     case "info":
-      return "Информация";
+      return t("profile.status.info");
     case "warning":
-      return "Изменение";
+      return t("profile.status.warning");
     case "friendship":
-      return "Дружба";
+      return t("profile.status.friendship");
     case "default":
-      return "Событие";
+      return t("profile.status.default");
     default:
-      return "Неизвестно";
+      return t("profile.status.unknown");
   }
 };
 
@@ -117,50 +119,17 @@ function TabPanel({ children, value, index, ...other }) {
   );
 }
 
-const translateCategory = (category) => {
-  const translations = {
-    notes_written: "Заметки",
-    topics_completed: "Завершение тем",
-    first_action: "Первые действия",
-    special: "Особые",
-    level_reached: "Уровни",
-    skills_created: "Создание навыков",
-    streak_days: "Серии дней",
-    friends_added: "Дружба",
-    friend_requests_received: "Популярность",
-    friend_requests_sent: "Инициативность",
-    friendship_duration: "Длительная дружба",
-    learning: "Обучение",
-    progress: "Прогресс",
-    activity: "Активность",
-    skills: "Навыки",
-    social: "Социальное",
-    time: "Время",
-    completion: "Завершение",
-    streak: "Серии",
-    milestones: "Вехи",
-    achievements: "Достижения",
-    notes: "Заметки",
-    topics: "Темы",
-    practice: "Практика",
-    consistency: "Постоянство",
-    dedication: "Преданность",
-  };
-  return translations[category] || category;
+const translateCategory = (category, t) => {
+  return t(`profile.achievements.categories.${category}`, category);
 };
 
-const translateRarity = (rarity) => {
-  const translations = {
-    common: "Обычное",
-    uncommon: "Необычное",
-    rare: "Редкое",
-    epic: "Эпическое",
-    legendary: "Легендарное",
-  };
-  return translations[rarity] || rarity;
+const translateRarity = (rarity, t) => {
+  return t(`profile.achievements.rarity.${rarity}`, rarity);
 };
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
+
   // State management
   const [tabValue, setTabValue] = useState(0);
   const [editMode, setEditMode] = useState(false);
@@ -180,6 +149,8 @@ export default function ProfilePage() {
   const [findFriendsModal, setFindFriendsModal] = useState(false);
   const [sentRequestsModal, setSentRequestsModal] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [selectedFriend, setSelectedFriend] = useState(null);
 
   // Users state for Find Friends
   const [allUsers, setAllUsers] = useState([]);
@@ -292,12 +263,15 @@ export default function ProfilePage() {
           });
 
           setEditMode(false);
-          showSuccess("Профиль успешно обновлен!");
+          showSuccess(t("profile.form.updateSuccess"));
         } else {
           showError(result.message);
         }
       } catch (error) {
-        showError(error.message || "Ошибка при обновлении профиля");
+        showError(
+          error.message ||
+            t("profile.form.updateError", "Ошибка при обновлении профиля")
+        );
       }
     }
   );
@@ -310,7 +284,7 @@ export default function ProfilePage() {
     },
     async (data) => {
       if (data.newPassword !== data.confirmPassword) {
-        showError("Пароли не совпадают");
+        showError(t("profile.form.passwordsNotMatch"));
         return;
       }
       try {
@@ -321,29 +295,32 @@ export default function ProfilePage() {
         if (result.success) {
           setChangePasswordDialog(false);
           passwordForm.resetForm();
-          showSuccess("Пароль успешно изменен!");
+          showSuccess(t("profile.form.passwordUpdateSuccess"));
         } else {
           showError(result.message);
         }
       } catch (error) {
-        showError(error.message || "Ошибка при изменении пароля");
+        showError(
+          error.message ||
+            t("profile.form.passwordUpdateError", "Ошибка при изменении пароля")
+        );
       }
     }
   );
 
   // Helper functions
   const formatSafeDate = (dateString) => {
-    if (!dateString) return "Неизвестно";
+    if (!dateString) return t("profile.dateFormat.unknown");
     try {
       return new Date(dateString).toLocaleDateString("ru-RU");
     } catch (error) {
-      return "Неизвестно";
+      return t("profile.dateFormat.unknown");
     }
   };
 
   const handleLogout = () => {
     logout();
-    showSuccess("Вы успешно вышли из системы");
+    showSuccess(t("profile.logout.success"));
     window.location.href = "/login";
   };
 
@@ -356,7 +333,7 @@ export default function ProfilePage() {
       const token = getToken();
 
       if (!token) {
-        throw new Error("Токен авторизации не найден");
+        throw new Error(t("profile.privacy.tokenError"));
       }
 
       const API_BASE_URL =
@@ -373,9 +350,7 @@ export default function ProfilePage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(
-          errorData.message || "Не удалось обновить настройки приватности"
-        );
+        throw new Error(errorData.message || t("profile.privacy.updateFailed"));
       }
 
       const data = await response.json();
@@ -389,12 +364,10 @@ export default function ProfilePage() {
         },
       }));
 
-      showSuccess("Настройки приватности успешно обновлены");
+      showSuccess(t("profile.privacy.updateSuccess"));
     } catch (error) {
       console.error("Ошибка при обновлении настроек приватности:", error);
-      showError(
-        error.message || "Произошла ошибка при обновлении настроек приватности"
-      );
+      showError(error.message || t("profile.privacy.updateError"));
     } finally {
       setIsUpdatingPrivacy(false);
     }
@@ -416,7 +389,7 @@ export default function ProfilePage() {
             ...prev,
             user: updatedUser,
           }));
-          showSuccess("Аватар успешно обновлен!");
+          showSuccess(t("profile.form.avatarUpdateSuccess"));
         } else {
           const reader = new FileReader();
           reader.onload = (e) => {
@@ -424,7 +397,7 @@ export default function ProfilePage() {
               ...prev,
               user: { ...prev.user, avatar: e.target.result },
             }));
-            showError("Аватар обновлен локально, но не сохранен на сервере");
+            showError(t("profile.form.avatarUpdateLocalError"));
           };
           reader.readAsDataURL(file);
         }
@@ -435,7 +408,7 @@ export default function ProfilePage() {
             ...prev,
             user: { ...prev.user, avatar: e.target.result },
           }));
-          showError("Произошла ошибка. Аватар показан локально");
+          showError(t("profile.form.avatarUpdateError"));
         };
         reader.readAsDataURL(file);
       }
@@ -573,9 +546,7 @@ export default function ProfilePage() {
       !noteForm.content.trim() ||
       !noteForm.topic_id
     ) {
-      showError(
-        "Заполните все обязательные поля: название, содержание и выберите топик"
-      );
+      showError(t("profile.notes.dialog.requiredFields"));
       return;
     }
 
@@ -583,7 +554,7 @@ export default function ProfilePage() {
       if (editingNote) {
         const result = await updateExistingNote(editingNote.id, noteForm);
         if (result.success) {
-          showSuccess("Заметка обновлена!");
+          showSuccess(t("profile.notes.dialog.updateSuccess"));
           handleCloseNoteDialog();
           await loadNotes();
         } else {
@@ -592,7 +563,7 @@ export default function ProfilePage() {
       } else {
         const result = await createNewNote(noteForm);
         if (result.success) {
-          showSuccess("Заметка создана!");
+          showSuccess(t("profile.notes.dialog.createSuccess"));
           handleCloseNoteDialog();
           await loadNotes();
         } else {
@@ -600,23 +571,23 @@ export default function ProfilePage() {
         }
       }
     } catch (error) {
-      showError("Произошла ошибка при сохранении заметки");
+      showError(t("profile.notes.dialog.saveError"));
       console.error("Error saving note:", error);
     }
   };
 
   const handleDeleteNote = async (noteId) => {
-    if (window.confirm("Вы уверены, что хотите удалить эту заметку?")) {
+    if (window.confirm(t("profile.notes.dialog.deleteConfirm"))) {
       try {
         const result = await deleteExistingNote(noteId);
         if (result.success) {
-          showSuccess("Заметка удалена");
+          showSuccess(t("profile.notes.dialog.deleteSuccess"));
           await loadNotes();
         } else {
           showError(result.message);
         }
       } catch (error) {
-        showError("Ошибка при удалении заметки");
+        showError(t("profile.notes.dialog.deleteError"));
       }
     }
   };
@@ -717,8 +688,17 @@ export default function ProfilePage() {
       setAllUsers(users);
     } catch (error) {
       console.error("Error fetching users:", error);
-      setUsersError(error.message || "Не удалось загрузить пользователей");
-      showError(error.message || "Не удалось загрузить список пользователей");
+      setUsersError(
+        error.message ||
+          t("profile.friends.loadError", "Не удалось загрузить пользователей")
+      );
+      showError(
+        error.message ||
+          t(
+            "profile.friends.loadListError",
+            "Не удалось загрузить список пользователей"
+          )
+      );
     } finally {
       setUsersLoading(false);
     }
@@ -774,6 +754,18 @@ export default function ProfilePage() {
   const handleUserSearch = useCallback((e) => {
     setUserSearch(e.target.value);
     setUsersPage(1); // Сбросить страницу поиска при новом запросе
+  }, []);
+
+  // Chat handlers
+  const handleOpenChat = useCallback((friend) => {
+    console.log("Opening chat with friend:", friend);
+    setSelectedFriend(friend);
+    setChatOpen(true);
+  }, []);
+
+  const handleCloseChat = useCallback(() => {
+    setChatOpen(false);
+    setSelectedFriend(null);
   }, []);
 
   // Calculate notes statistics
@@ -876,7 +868,7 @@ export default function ProfilePage() {
         <Navbar />
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
           <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
-            <Typography>Необходима авторизация</Typography>
+            <Typography>{t("profile.authRequired")}</Typography>
           </Box>
         </Container>
       </Box>
@@ -890,7 +882,7 @@ export default function ProfilePage() {
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
           <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
             <LinearProgress sx={{ width: "100%" }} />
-            <Typography>Загрузка профиля...</Typography>
+            <Typography>{t("profile.loading")}</Typography>
           </Box>
         </Container>
       </Box>
@@ -910,9 +902,9 @@ export default function ProfilePage() {
             sx={{ display: "flex", alignItems: "center" }}
           >
             <Dashboard sx={{ mr: 0.5 }} fontSize="inherit" />
-            Панель управления
+            {t("profile.dashboardLink")}
           </Link>
-          <Typography color="text.primary">Личный кабинет</Typography>
+          <Typography color="text.primary">{t("profile.title")}</Typography>
         </Breadcrumbs>
 
         {/* Profile Header */}
@@ -932,14 +924,17 @@ export default function ProfilePage() {
               variant="scrollable"
               scrollButtons="auto"
             >
-              <Tab label="Профиль" icon={<Person />} />
-              <Tab label="Навыки" icon={<TrendingUp />} />
-              <Tab label="Заметки" icon={<Notes />} />
-              <Tab label="Достижения" icon={<EmojiEvents />} />
-              <Tab label="Друзья" icon={<People />} />
-              <Tab label="Безопасность" icon={<Security />} />
-              <Tab label="История" icon={<History />} />
-              <Tab label="Настройки" icon={<Settings />} />
+              <Tab label={t("profile.tabs.profile")} icon={<Person />} />
+              <Tab label={t("profile.tabs.skills")} icon={<TrendingUp />} />
+              <Tab label={t("profile.tabs.notes")} icon={<Notes />} />
+              <Tab
+                label={t("profile.tabs.achievements")}
+                icon={<EmojiEvents />}
+              />
+              <Tab label={t("profile.tabs.friends")} icon={<People />} />
+              <Tab label={t("profile.tabs.security")} icon={<Security />} />
+              <Tab label={t("profile.tabs.history")} icon={<History />} />
+              <Tab label={t("profile.tabs.settings")} icon={<Settings />} />
             </Tabs>
           </Box>
 
@@ -1005,8 +1000,8 @@ export default function ProfilePage() {
               getFilteredAchievements={getFilteredAchievements}
               getUniqueCategories={getUniqueCategories}
               getUniqueRarities={getUniqueRarities}
-              translateCategory={translateCategory}
-              translateRarity={translateRarity}
+              translateCategory={(category) => translateCategory(category, t)}
+              translateRarity={(rarity) => translateRarity(rarity, t)}
               formatSafeDate={formatSafeDate}
             />
           </TabPanel>
@@ -1022,6 +1017,7 @@ export default function ProfilePage() {
               onAcceptFriendRequest={acceptFriendRequest}
               onDeclineFriendRequest={declineFriendRequest}
               onRemoveFriend={removeFriend}
+              onOpenChat={handleOpenChat}
               showSuccess={showSuccess}
               showError={showError}
               loadFriends={loadFriends}
@@ -1045,7 +1041,7 @@ export default function ProfilePage() {
               onActivityPageChange={handleActivityPageChange}
               getPaginatedActivities={getPaginatedActivities}
               getTotalActivityPages={getTotalActivityPages}
-              getStatusLabel={getStatusLabel}
+              getStatusLabel={(status) => getStatusLabel(status, t)}
               getStatusColor={getStatusColor}
             />
           </TabPanel>
@@ -1087,16 +1083,16 @@ export default function ProfilePage() {
           maxWidth="md"
           fullWidth
         >
-          <DialogTitle>Найти друзей</DialogTitle>
+          <DialogTitle>{t("profile.friends.findFriends")}</DialogTitle>
           <DialogContent>
             <Box sx={{ mb: 2 }}>
               <TextField
                 fullWidth
-                label="Поиск пользователей"
+                label={t("profile.friends.searchUsers")}
                 variant="outlined"
                 value={userSearch}
                 onChange={handleUserSearch}
-                placeholder="Введите имя или никнейм"
+                placeholder={t("profile.friends.searchPlaceholder")}
                 InputProps={{
                   startAdornment: (
                     <FilterList sx={{ mr: 1, color: "action.active" }} />
@@ -1147,7 +1143,7 @@ export default function ProfilePage() {
                         <Box>
                           <Typography variant="h6">{user.name}</Typography>
                           <Typography variant="body2" color="text.secondary">
-                            Уровень {user.level} •{" "}
+                            {t("profile.friends.level")} {user.level} •{" "}
                             {new Date(user.registrationDate).toLocaleDateString(
                               "ru-RU"
                             )}
@@ -1156,7 +1152,7 @@ export default function ProfilePage() {
                       </Box>
                       {user.isPrivate && (
                         <Chip
-                          label="Приватный профиль"
+                          label={t("profile.friends.privateProfile")}
                           size="small"
                           color="warning"
                           variant="outlined"
@@ -1173,13 +1169,15 @@ export default function ProfilePage() {
                           sx={{ fontStyle: "italic" }}
                         >
                           {user.stats?.message ||
-                            "Статистика скрыта пользователем"}
+                            t("profile.friends.statsHidden")}
                         </Typography>
                       ) : (
                         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
                           {user.stats?.achievements && (
                             <Chip
-                              label={`${user.stats.achievements.completed}/${user.stats.achievements.total} достижений`}
+                              label={`${user.stats.achievements.completed}/${
+                                user.stats.achievements.total
+                              } ${t("profile.friends.achievements")}`}
                               size="small"
                               color="primary"
                               variant="outlined"
@@ -1187,7 +1185,9 @@ export default function ProfilePage() {
                           )}
                           {user.stats?.progress && (
                             <Chip
-                              label={`${user.stats.progress.completedTopics}/${user.stats.progress.totalTopics} тем`}
+                              label={`${user.stats.progress.completedTopics}/${
+                                user.stats.progress.totalTopics
+                              } ${t("profile.friends.topics")}`}
                               size="small"
                               color="secondary"
                               variant="outlined"
@@ -1195,7 +1195,9 @@ export default function ProfilePage() {
                           )}
                           {user.stats?.achievements?.points && (
                             <Chip
-                              label={`${user.stats.achievements.points} очков`}
+                              label={`${user.stats.achievements.points} ${t(
+                                "profile.friends.points"
+                              )}`}
                               size="small"
                               color="success"
                               variant="outlined"
@@ -1215,7 +1217,9 @@ export default function ProfilePage() {
                           onClick={() => {
                             sendFriendRequest(user.id).then((result) => {
                               if (result.success) {
-                                showSuccess("Запрос на дружбу отправлен");
+                                showSuccess(
+                                  t("profile.friends.messages.requestSent")
+                                );
                                 fetchAllUsers(); // Обновить список пользователей
                                 loadSentRequests(); // Обновить список исходящих запросов
                               } else {
@@ -1224,7 +1228,7 @@ export default function ProfilePage() {
                             });
                           }}
                         >
-                          Добавить в друзья
+                          {t("profile.friends.actions.addFriend")}
                         </Button>
                       )}
                       {user.friendship?.status === "sent_request" && (
@@ -1234,7 +1238,7 @@ export default function ProfilePage() {
                           disabled
                           color="warning"
                         >
-                          Запрос отправлен
+                          {t("profile.friends.actions.requestSent")}
                         </Button>
                       )}
                       {user.friendship?.status === "received_request" && (
@@ -1248,7 +1252,11 @@ export default function ProfilePage() {
                                 user.friendship.friendshipId
                               ).then((result) => {
                                 if (result.success) {
-                                  showSuccess("Запрос принят");
+                                  showSuccess(
+                                    t(
+                                      "profile.friends.messages.requestAccepted"
+                                    )
+                                  );
                                   fetchAllUsers(); // Обновить список
                                   loadFriends(); // Обновить список друзей
                                   loadPendingRequests(); // Обновить входящие запросы
@@ -1258,7 +1266,7 @@ export default function ProfilePage() {
                               });
                             }}
                           >
-                            Принять
+                            {t("profile.friends.actions.accept")}
                           </Button>
                           <Button
                             variant="outlined"
@@ -1269,7 +1277,11 @@ export default function ProfilePage() {
                                 user.friendship.friendshipId
                               ).then((result) => {
                                 if (result.success) {
-                                  showSuccess("Запрос отклонен");
+                                  showSuccess(
+                                    t(
+                                      "profile.friends.messages.requestDeclined"
+                                    )
+                                  );
                                   fetchAllUsers(); // Обновить список
                                   loadPendingRequests(); // Обновить входящие запросы
                                 } else {
@@ -1278,13 +1290,13 @@ export default function ProfilePage() {
                               });
                             }}
                           >
-                            Отклонить
+                            {t("profile.friends.actions.decline")}
                           </Button>
                         </Box>
                       )}
                       {user.friendship?.status === "accepted" && (
                         <Chip
-                          label="Уже друзья"
+                          label={t("profile.friends.actions.alreadyFriends")}
                           size="small"
                           color="success"
                           icon={<Check />}
@@ -1318,7 +1330,9 @@ export default function ProfilePage() {
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setFindFriendsModal(false)}>Закрыть</Button>
+            <Button onClick={() => setFindFriendsModal(false)}>
+              {t("profile.friends.close")}
+            </Button>
           </DialogActions>
         </Dialog>
 
@@ -1329,7 +1343,7 @@ export default function ProfilePage() {
           maxWidth="md"
           fullWidth
         >
-          <DialogTitle>Исходящие запросы на дружбу</DialogTitle>
+          <DialogTitle>{t("profile.friends.sentRequests")}</DialogTitle>
           <DialogContent>
             {friendsLoading ? (
               <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
@@ -1345,10 +1359,10 @@ export default function ProfilePage() {
               >
                 <Send sx={{ fontSize: 64, mb: 2, opacity: 0.5 }} />
                 <Typography variant="h6" gutterBottom>
-                  Нет исходящих запросов
+                  {t("profile.friends.noRequests.title")}
                 </Typography>
                 <Typography variant="body2">
-                  Вы не отправляли запросы на дружбу
+                  {t("profile.friends.noRequests.description")}
                 </Typography>
               </Box>
             ) : (
@@ -1376,13 +1390,15 @@ export default function ProfilePage() {
                           sx={{ display: "flex", alignItems: "center", gap: 1 }}
                         >
                           <Chip
-                            label={`Уровень ${request.addressee.level}`}
+                            label={`${t("profile.friends.level")} ${
+                              request.addressee.level
+                            }`}
                             size="small"
                             color="primary"
                             variant="outlined"
                           />
                           <Typography variant="caption" color="text.secondary">
-                            Отправлено:{" "}
+                            {t("profile.friends.requestDate")}{" "}
                             {new Date(request.requestDate).toLocaleDateString(
                               "ru-RU"
                             )}
@@ -1398,13 +1414,19 @@ export default function ProfilePage() {
                         onClick={() => {
                           if (
                             window.confirm(
-                              `Вы уверены, что хотите отменить запрос на дружбу для ${request.addressee.name}?`
+                              t("profile.friends.messages.cancelConfirm", {
+                                name: request.addressee.name,
+                              })
                             )
                           ) {
                             removeFriend(request.friendshipId).then(
                               (result) => {
                                 if (result.success) {
-                                  showSuccess("Запрос отменен");
+                                  showSuccess(
+                                    t(
+                                      "profile.friends.messages.requestCanceled"
+                                    )
+                                  );
                                   loadSentRequests(); // Обновить исходящие запросы
                                   loadFriends(); // Обновить список друзей
                                 } else {
@@ -1415,7 +1437,7 @@ export default function ProfilePage() {
                           }
                         }}
                       >
-                        Отменить запрос
+                        {t("profile.friends.actions.cancelRequest")}
                       </Button>
                     </Box>
                   </ListItem>
@@ -1429,10 +1451,20 @@ export default function ProfilePage() {
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setSentRequestsModal(false)}>Закрыть</Button>
+            <Button onClick={() => setSentRequestsModal(false)}>
+              {t("profile.friends.close")}
+            </Button>
           </DialogActions>
         </Dialog>
       </Container>
+
+      {/* Chat Dialog */}
+      <ChatDialog
+        open={chatOpen}
+        onClose={handleCloseChat}
+        friend={selectedFriend}
+        currentUser={userProfile?.user}
+      />
 
       {/* Snackbar */}
       <Snackbar

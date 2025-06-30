@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogTitle,
@@ -10,17 +11,18 @@ import {
 } from "@mui/material";
 
 const PasswordChangeDialog = ({ open, onClose, passwordForm, onSubmit }) => {
+  const { t } = useTranslation();
   const { formData, handleInputChange, errors, handleSubmit, isSubmitting } =
     passwordForm;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Смена пароля</DialogTitle>
+      <DialogTitle>{t("profile.security.changePassword")}</DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 1 }}>
           <TextField
             fullWidth
-            label="Текущий пароль"
+            label={t("profile.security.currentPassword")}
             name="currentPassword"
             type="password"
             value={formData.currentPassword}
@@ -31,7 +33,7 @@ const PasswordChangeDialog = ({ open, onClose, passwordForm, onSubmit }) => {
           />
           <TextField
             fullWidth
-            label="Новый пароль"
+            label={t("profile.security.newPassword")}
             name="newPassword"
             type="password"
             value={formData.newPassword}
@@ -42,7 +44,7 @@ const PasswordChangeDialog = ({ open, onClose, passwordForm, onSubmit }) => {
           />
           <TextField
             fullWidth
-            label="Подтвердите новый пароль"
+            label={t("profile.security.confirmPassword")}
             name="confirmPassword"
             type="password"
             value={formData.confirmPassword}
@@ -54,13 +56,13 @@ const PasswordChangeDialog = ({ open, onClose, passwordForm, onSubmit }) => {
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Отмена</Button>
+        <Button onClick={onClose}>{t("common.cancel")}</Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
           disabled={isSubmitting}
         >
-          Изменить пароль
+          {t("profile.security.changePassword")}
         </Button>
       </DialogActions>
     </Dialog>

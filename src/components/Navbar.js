@@ -21,12 +21,15 @@ import {
   Dashboard,
 } from "@mui/icons-material";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth, useProfile } from "../hooks";
 import { getAvatarUrl } from "../utils/avatarUtils";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 export default function Navbar() {
   const [anchorEl, setAnchorEl] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
+  const { t } = useTranslation();
   const { isAuthenticated, logout, getUser } = useAuth();
   const { getFullInfo } = useProfile();
   const open = Boolean(anchorEl);
@@ -119,16 +122,16 @@ export default function Navbar() {
             }}
           >
             <Button href="#showcase" color="inherit">
-              Презентация
+              {t("navbar.showcase")}
             </Button>
             <Button href="#why-choose-us" color="inherit">
-              Почему мы
+              {t("navbar.whyChoose")}
             </Button>
             <Button href="#fast-introduction" color="inherit">
-              Знакомство
+              {t("navbar.introduction")}
             </Button>
             <Button href="#what-will-you-get" color="inherit">
-              Что вы получите
+              {t("navbar.whatYouGet")}
             </Button>
           </Box>
           <Box sx={{ flexGrow: 1, textAlign: "center" }}>
@@ -142,19 +145,20 @@ export default function Navbar() {
             }}
           >
             <Button href="#reviews" color="inherit">
-              Отзывы
+              {t("navbar.reviews")}
             </Button>
             <Button href="#prices" color="inherit">
-              Цены
+              {t("navbar.prices")}
             </Button>
             <Button href="#faq" color="inherit">
-              Вопросы и ответы
+              {t("navbar.faq")}
             </Button>{" "}
             <Button href="#contacts" color="inherit">
-              Контакты
+              {t("navbar.contacts")}
             </Button>
             {isAuthenticated() ? (
               <>
+                <LanguageSwitcher variant="menu" />
                 <IconButton
                   onClick={handleClick}
                   size="small"
@@ -220,32 +224,35 @@ export default function Navbar() {
                     <ListItemIcon>
                       <Dashboard fontSize="small" />
                     </ListItemIcon>
-                    <ListItemText>Панель управления</ListItemText>
+                    <ListItemText>{t("navbar.dashboard")}</ListItemText>
                   </MenuItem>
                   <MenuItem onClick={handleProfile}>
                     <ListItemIcon>
                       <Person fontSize="small" />
                     </ListItemIcon>
-                    <ListItemText>Профиль</ListItemText>
+                    <ListItemText>{t("navbar.profile")}</ListItemText>
                   </MenuItem>
                   <Divider />
                   <MenuItem onClick={handleLogout}>
                     <ListItemIcon>
                       <ExitToApp fontSize="small" />
                     </ListItemIcon>
-                    <ListItemText>Выйти</ListItemText>
+                    <ListItemText>{t("navbar.logout")}</ListItemText>
                   </MenuItem>
                 </Menu>
               </>
             ) : (
-              <Button
-                color="inherit"
-                startIcon={<Login />}
-                onClick={handleLogin}
-                sx={{ ml: 2 }}
-              >
-                Войти
-              </Button>
+              <>
+                <LanguageSwitcher variant="menu" />
+                <Button
+                  color="inherit"
+                  startIcon={<Login />}
+                  onClick={handleLogin}
+                  sx={{ ml: 2 }}
+                >
+                  {t("navbar.login")}
+                </Button>
+              </>
             )}
           </Box>
         </Toolbar>

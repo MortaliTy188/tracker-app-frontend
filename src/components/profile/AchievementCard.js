@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Card,
   CardContent,
@@ -13,7 +14,10 @@ const AchievementCard = ({
   translateCategory,
   translateRarity,
   formatSafeDate,
+  hideDescription = false,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <Card
       sx={{
@@ -109,23 +113,27 @@ const AchievementCard = ({
         </Box>
 
         {/* Achievement Description */}
-        <Typography
-          variant="body2"
-          sx={{
-            mb: 2,
-            flexGrow: 1,
-            color: achievement.isCompleted ? "text.primary" : "text.secondary",
-          }}
-        >
-          {achievement.description}
-        </Typography>
+        {!hideDescription && (
+          <Typography
+            variant="body2"
+            sx={{
+              mb: 2,
+              flexGrow: 1,
+              color: achievement.isCompleted
+                ? "text.primary"
+                : "text.secondary",
+            }}
+          >
+            {achievement.description}
+          </Typography>
+        )}
 
         {/* Status and Progress */}
         <Box sx={{ mt: "auto" }}>
           {achievement.isCompleted ? (
             <>
               <Chip
-                label={`Получено! +${achievement.points} очков`}
+                label={t("achievements.earned", { points: achievement.points })}
                 color="success"
                 size="small"
                 sx={{ mb: 1 }}
@@ -169,7 +177,7 @@ const AchievementCard = ({
                 color="text.secondary"
                 sx={{ mt: 0.5, display: "block" }}
               >
-                {achievement.percentage || 0}% завершено
+                {achievement.percentage || 0}% {t("achievements.completed")}
               </Typography>
             </>
           )}

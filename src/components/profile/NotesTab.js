@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Box,
   Typography,
@@ -45,6 +46,8 @@ export default function NotesTab({
   onDeleteNote,
   formatSafeDate,
 }) {
+  const { t } = useTranslation();
+
   if (notesLoading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
@@ -64,7 +67,7 @@ export default function NotesTab({
         }}
       >
         <Typography variant="h5" gutterBottom>
-          📝 Ваши заметки
+          📝 {t("notes.yourNotes")}
         </Typography>
         <Button
           variant="contained"
@@ -72,7 +75,7 @@ export default function NotesTab({
           onClick={() => onOpenNoteDialog()}
           sx={{ ml: 2 }}
         >
-          Добавить заметку
+          {t("notes.addNote")}
         </Button>
       </Box>
 
@@ -85,7 +88,7 @@ export default function NotesTab({
                 {notesStats.total || 0}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Всего заметок
+                {t("profile.notes.stats.total")}
               </Typography>
             </CardContent>
           </Card>
@@ -97,7 +100,7 @@ export default function NotesTab({
                 {notesStats.thisWeek || 0}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                На этой неделе
+                {t("profile.notes.stats.thisWeek")}
               </Typography>
             </CardContent>
           </Card>
@@ -109,7 +112,7 @@ export default function NotesTab({
                 {notesStats.thisMonth || 0}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                В этом месяце
+                {t("profile.notes.stats.thisMonth")}
               </Typography>
             </CardContent>
           </Card>
@@ -121,7 +124,7 @@ export default function NotesTab({
                 {notesStats.averageLength || 0}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Средняя длина
+                {t("profile.notes.stats.averageLength")}
               </Typography>
             </CardContent>
           </Card>
@@ -134,23 +137,27 @@ export default function NotesTab({
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label="Поиск заметок"
+              label={t("profile.notes.search")}
               value={notesSearch}
               onChange={(e) => onNotesSearchChange(e.target.value)}
-              placeholder="Введите ключевые слова..."
+              placeholder={t("notes.searchPlaceholder")}
             />
           </Grid>
           <Grid item xs={12} md={3}>
             <FormControl fullWidth>
-              <InputLabel>Сортировка</InputLabel>
+              <InputLabel>{t("common.sort")}</InputLabel>
               <Select
                 value={notesSortBy}
-                label="Сортировка"
+                label={t("common.sort")}
                 onChange={(e) => onNotesSortByChange(e.target.value)}
               >
-                <MenuItem value="date">По дате</MenuItem>
-                <MenuItem value="title">По названию</MenuItem>
-                <MenuItem value="length">По длине</MenuItem>
+                <MenuItem value="date">{t("profile.notes.sort.date")}</MenuItem>
+                <MenuItem value="title">
+                  {t("profile.notes.sort.title")}
+                </MenuItem>
+                <MenuItem value="length">
+                  {t("profile.notes.sort.length")}
+                </MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -164,8 +171,12 @@ export default function NotesTab({
               size="small"
               fullWidth
             >
-              <ToggleButton value="desc">Убывание</ToggleButton>
-              <ToggleButton value="asc">Возрастание</ToggleButton>
+              <ToggleButton value="desc">
+                {t("profile.notes.order.desc")}
+              </ToggleButton>
+              <ToggleButton value="asc">
+                {t("profile.notes.order.asc")}
+              </ToggleButton>
             </ToggleButtonGroup>
           </Grid>
         </Grid>
@@ -174,18 +185,18 @@ export default function NotesTab({
       {/* Notes List */}
       {notesError ? (
         <Alert severity="error" sx={{ mb: 3 }}>
-          Ошибка загрузки заметок: {notesError}
+          {t("notes.loadingError")}: {notesError}
         </Alert>
       ) : filteredNotes.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: "center" }}>
           <Notes sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
           <Typography variant="h6" color="text.secondary" gutterBottom>
-            {notesSearch ? "Заметки не найдены" : "У вас пока нет заметок"}
+            {notesSearch ? t("notes.notFound") : t("notes.noNotesYet")}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {notesSearch
-              ? "Попробуйте изменить критерии поиска"
-              : "Создайте первую заметку, чтобы начать отслеживать свои мысли и идеи"}
+              ? t("notes.tryChangingSearch")
+              : t("notes.createFirstNote")}
           </Typography>
         </Paper>
       ) : (
@@ -231,7 +242,7 @@ export default function NotesTab({
                     >
                       {note.content && note.content.length > 150
                         ? `${note.content.substring(0, 150)}...`
-                        : note.content || "Нет содержания"}
+                        : note.content || t("notes.noContent")}
                     </Typography>
                     <Box
                       sx={{
@@ -241,7 +252,8 @@ export default function NotesTab({
                       }}
                     >
                       <Typography variant="caption" color="text.secondary">
-                        {note.content ? note.content.length : 0} символов
+                        {note.content ? note.content.length : 0}{" "}
+                        {t("notes.characters")}
                       </Typography>
                       {note.topic && (
                         <Box sx={{ display: "flex", gap: 0.5 }}>
@@ -269,14 +281,14 @@ export default function NotesTab({
                       startIcon={<Edit />}
                       onClick={() => onOpenNoteDialog(note)}
                     >
-                      Редактировать
+                      {t("common.edit")}
                     </Button>
                     <Button
                       size="small"
                       color="error"
                       onClick={() => onDeleteNote(note.id)}
                     >
-                      Удалить
+                      {t("common.delete")}
                     </Button>
                   </CardActions>
                 </Card>

@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Grid,
   Card,
@@ -22,6 +23,8 @@ export default function SettingsTab({
   getToken,
   isUpdatingPrivacy = false,
 }) {
+  const { t } = useTranslation();
+
   // Handle privacy setting change - just call parent callback
   const handlePrivacyChange = useCallback(
     (isPrivate) => {
@@ -54,19 +57,19 @@ export default function SettingsTab({
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Уведомления
+              {t("settings.notifications")}
             </Typography>
             <List>
               <ListItem>
                 <ListItemText
-                  primary="Email уведомления"
-                  secondary="Получать уведомления на email"
+                  primary={t("settings.emailNotifications")}
+                  secondary={t("settings.receiveEmailNotifications")}
                 />
               </ListItem>
               <ListItem>
                 <ListItemText
-                  primary="Push уведомления"
-                  secondary="Получать push-уведомления в браузере"
+                  primary={t("settings.pushNotifications")}
+                  secondary={t("settings.receivePushNotifications")}
                 />
               </ListItem>
             </List>
@@ -78,13 +81,13 @@ export default function SettingsTab({
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Приватность
+              {t("settings.privacy")}
             </Typography>
             <List>
               <ListItem>
                 <ListItemText
-                  primary="Приватный профиль"
-                  secondary="Скрыть статистику от других пользователей"
+                  primary={t("settings.privateProfile")}
+                  secondary={t("settings.hideStats")}
                 />
                 <Switch
                   checked={userProfile?.user?.isPrivate || false}
@@ -95,8 +98,8 @@ export default function SettingsTab({
               </ListItem>
               <ListItem>
                 <ListItemText
-                  primary="Показать активность"
-                  secondary="Отображать время последней активности"
+                  primary={t("settings.showActivity")}
+                  secondary={t("settings.displayLastActivity")}
                 />
                 <Switch disabled color="primary" />
               </ListItem>
