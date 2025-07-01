@@ -86,7 +86,7 @@
     "categoriesDistribution": "Category distribution",
     "categories": {
       "Языки": "Languages",
-      "Программирование": "Programming", 
+      "Программирование": "Programming",
       "Менеджмент": "Management",
       "Маркетинг": "Marketing",
       "Дизайн": "Design"
@@ -391,6 +391,7 @@
       "sentRequests": "Outgoing friend requests",
       "searchUsers": "Search users",
       "searchPlaceholder": "Enter name or nickname",
+      "level": "Level",
       "privateProfile": "Private profile",
       "statsHidden": "Statistics hidden by user",
       "achievements": "achievements",

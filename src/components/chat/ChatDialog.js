@@ -26,7 +26,7 @@ import {
 } from "@mui/icons-material";
 import { getAvatarUrl } from "../../utils/avatarUtils";
 import { useSocket } from "../../hooks/useSocket";
-import { getMessages, markMessagesAsRead } from "../../api/chatApi";
+import { getMessages } from "../../api/chatApi";
 
 /**
  * Компонент чата между пользователями
@@ -59,7 +59,26 @@ const ChatDialog = ({
     markAsRead,
     on,
     off,
+    socket,
   } = useSocket();
+
+  // Функция для очистки временных сообщений
+  const clearTemporaryMessages = useCallback(() => {
+    setMessages((prev) => prev.filter((msg) => !msg.isTemporary));
+  }, []);
+
+  // Очистка временных сообщений при отключении сокета
+  useEffect(() => {
+    if (!isConnected) {
+      // Задержка для очистки временных сообщений если сокет отключился
+      const timeoutId = setTimeout(() => {
+        console.log("🧹 Clearing temporary messages due to disconnection");
+        clearTemporaryMessages();
+      }, 5000); // 5 секунд ожидания
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isConnected, clearTemporaryMessages]);
 
   // Загрузка истории сообщений
   const loadMessages = useCallback(async () => {
@@ -90,19 +109,28 @@ const ChatDialog = ({
 
   // Отправка сообщения
   const handleSendMessage = useCallback(async () => {
-    if (!newMessage.trim() || !friend?.id) return;
+    if (!newMessage.trim() || !friend?.id || !currentUser?.id) return;
 
     const messageContent = newMessage.trim();
     setNewMessage("");
 
+    console.log("📤 Sending message:", messageContent);
+    console.log("📤 To friend ID:", friend.id);
+    console.log("📤 Socket connected:", isConnected);
+
     // Отправляем через Socket.IO если подключен
     if (isConnected) {
+      console.log("📤 Using socket to send message");
       socketSendMessage(friend.id, messageContent);
+    } else {
+      console.log("❌ Socket not connected, cannot send message");
+      // Если сокет не подключен, не добавляем временное сообщение
+      return;
     }
 
     // Добавляем сообщение локально для мгновенного отображения
     const tempMessage = {
-      id: Date.now(), // временный ID
+      id: `temp_${Date.now()}`, // временный ID с префиксом
       sender_id: currentUser.id,
       receiver_id: friend.id,
       content: messageContent,
@@ -110,9 +138,20 @@ const ChatDialog = ({
       is_read: false,
       created_at: new Date().toISOString(),
       sender: currentUser,
+      isTemporary: true, // флаг временного сообщения
     };
 
+    console.log("📤 Adding temp message locally:", tempMessage);
     setMessages((prev) => [...prev, tempMessage]);
+
+    // Устанавливаем таймаут для удаления временного сообщения если оно не заменено
+    const tempMessageTimeout = setTimeout(() => {
+      console.log("⏰ Timeout: removing temp message that wasn't replaced");
+      setMessages((prev) => prev.filter((msg) => msg.id !== tempMessage.id));
+    }, 10000); // 10 секунд
+
+    // Сохраняем ссылку на таймаут для возможной очистки
+    tempMessage.timeoutId = tempMessageTimeout;
 
     // Останавливаем индикатор печатания
     if (isConnected) {
@@ -121,7 +160,7 @@ const ChatDialog = ({
   }, [
     newMessage,
     friend?.id,
-    currentUser,
+    currentUser?.id,
     isConnected,
     socketSendMessage,
     stopTyping,
@@ -183,26 +222,110 @@ const ChatDialog = ({
 
   // Подписка на события сообщений
   useEffect(() => {
-    if (!isConnected) return;
+    if (!isConnected || !socket) {
+      console.log("❌ Cannot subscribe to events: not connected or no socket");
+      return;
+    }
 
-    const handleNewMessage = (data) => {
-      console.log("New message received:", data);
-      if (
-        data.message.sender_id === friend?.id ||
-        data.message.receiver_id === friend?.id
-      ) {
+    console.log("📡 Setting up message event handlers");
+
+    const handleNewMessage = (message) => {
+      console.log("📨 New message received:", message);
+      console.log(
+        "👤 Current friend ID:",
+        friend?.id,
+        "type:",
+        typeof friend?.id
+      );
+      console.log(
+        "👤 Current user ID:",
+        currentUser?.id,
+        "type:",
+        typeof currentUser?.id
+      );
+      console.log(
+        "👤 Message sender ID:",
+        message.sender_id,
+        "type:",
+        typeof message.sender_id
+      );
+      console.log(
+        "👤 Message receiver ID:",
+        message.receiver_id,
+        "type:",
+        typeof message.receiver_id
+      );
+
+      // Приводим все ID к числам для корректного сравнения
+      const friendId = Number(friend?.id);
+      const currentUserId = Number(currentUser?.id);
+      const senderId = Number(message.sender_id);
+      const receiverId = Number(message.receiver_id);
+
+      console.log("🔢 Converted IDs:", {
+        friendId,
+        currentUserId,
+        senderId,
+        receiverId,
+      });
+
+      const isFromFriend =
+        senderId === friendId && receiverId === currentUserId;
+      const isFromMe = senderId === currentUserId && receiverId === friendId;
+
+      console.log("🔍 Comparison results:", {
+        isFromFriend,
+        isFromMe,
+        match: isFromFriend || isFromMe,
+      });
+
+      if (isFromFriend || isFromMe) {
+        console.log(
+          "✅ Message matches current conversation, adding to messages"
+        );
         setMessages((prev) => {
           // Проверяем, нет ли уже такого сообщения
-          const exists = prev.find((msg) => msg.id === data.message.id);
-          if (exists) return prev;
+          const exists = prev.find((msg) => msg.id === message.id);
+          if (exists) {
+            console.log("⚠️ Message already exists, skipping");
+            return prev;
+          }
 
-          return [...prev, data.message];
+          // Если это сообщение от нас, ищем и заменяем временное сообщение
+          if (isFromMe) {
+            const tempIndex = prev.findIndex(
+              (msg) =>
+                msg.isTemporary &&
+                msg.content === message.content &&
+                Number(msg.sender_id) === senderId &&
+                Number(msg.receiver_id) === receiverId
+            );
+
+            if (tempIndex !== -1) {
+              console.log("🔄 Replacing temporary message with real one");
+              const tempMessage = prev[tempIndex];
+
+              // Очищаем таймаут временного сообщения если он есть
+              if (tempMessage.timeoutId) {
+                clearTimeout(tempMessage.timeoutId);
+              }
+
+              const newMessages = [...prev];
+              newMessages[tempIndex] = message;
+              return newMessages;
+            }
+          }
+
+          console.log("➕ Adding new message to state");
+          return [...prev, message];
         });
 
         // Отмечаем как прочитанное если получили от друга
-        if (data.message.sender_id === friend?.id) {
+        if (senderId === friendId) {
           markAsRead(friend.id);
         }
+      } else {
+        console.log("❌ Message doesn't match current conversation, ignoring");
       }
     };
 
@@ -219,7 +342,7 @@ const ChatDialog = ({
     };
 
     const handleMessageRead = (data) => {
-      if (data.senderId === currentUser.id) {
+      if (currentUser?.id && data.senderId === currentUser.id) {
         // Обновляем статус прочтения наших сообщений
         setMessages((prev) =>
           prev.map((msg) =>
@@ -231,18 +354,22 @@ const ChatDialog = ({
       }
     };
 
+    console.log("📡 Subscribing to socket events...");
     on("new_message", handleNewMessage);
     on("typing_start", handleTypingStart);
     on("typing_stop", handleTypingStop);
     on("message_read", handleMessageRead);
+    console.log("✅ Socket events subscribed");
 
     return () => {
+      console.log("📡 Unsubscribing from socket events...");
       off("new_message", handleNewMessage);
       off("typing_start", handleTypingStart);
       off("typing_stop", handleTypingStop);
       off("message_read", handleMessageRead);
+      console.log("✅ Socket events unsubscribed");
     };
-  }, [isConnected, friend?.id, currentUser.id, markAsRead, on, off]);
+  }, [isConnected, friend?.id, currentUser?.id, markAsRead, on, off, socket]);
 
   // Прокрутка при новых сообщениях
   useEffect(() => {
@@ -253,21 +380,37 @@ const ChatDialog = ({
   useEffect(() => {
     if (open && friend?.id && isConnected) {
       markAsRead(friend.id);
-      // Также через REST API
-      markMessagesAsRead(friend.id).catch(console.error);
     }
   }, [open, friend?.id, isConnected, markAsRead]);
 
-  // Очистка таймера при размонтировании
+  // Очистка таймеров при размонтировании
   useEffect(() => {
     return () => {
       if (typingTimeout) {
         clearTimeout(typingTimeout);
       }
+
+      // Очищаем таймауты всех временных сообщений
+      setMessages((prev) => {
+        prev.forEach((msg) => {
+          if (msg.timeoutId) {
+            clearTimeout(msg.timeoutId);
+          }
+        });
+        return prev.filter((msg) => !msg.isTemporary);
+      });
     };
   }, [typingTimeout]);
 
-  if (!friend) return null;
+  if (!friend || !currentUser) return null;
+
+  console.log("ChatDialog render:", {
+    currentUser,
+    friend,
+    messagesCount: messages.length,
+    firstMessageSender: messages[0]?.sender_id,
+    currentUserId: currentUser?.id,
+  });
 
   const isOnline = onlineUsers.has(friend.id);
 
@@ -370,7 +513,17 @@ const ChatDialog = ({
             </Box>
           ) : (
             messages.map((message, index) => {
-              const isOwn = message.sender_id === currentUser.id;
+              const isOwn =
+                currentUser?.id &&
+                String(message.sender_id) === String(currentUser.id);
+              console.log("Message debug:", {
+                messageId: message.id,
+                senderId: message.sender_id,
+                currentUserId: currentUser?.id,
+                isOwn,
+                senderIdType: typeof message.sender_id,
+                currentUserIdType: typeof currentUser?.id,
+              });
               const showAvatar =
                 index === 0 ||
                 messages[index - 1].sender_id !== message.sender_id;
@@ -409,6 +562,8 @@ const ChatDialog = ({
                       borderRadius: 2,
                       borderBottomRightRadius: isOwn ? 4 : 12,
                       borderBottomLeftRadius: isOwn ? 12 : 4,
+                      opacity: message.isTemporary ? 0.6 : 1, // Полупрозрачность для временных сообщений
+                      transition: "opacity 0.2s ease",
                     }}
                   >
                     <Typography variant="body2">{message.content}</Typography>

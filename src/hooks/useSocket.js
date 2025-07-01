@@ -15,7 +15,8 @@ export const useSocket = () => {
 
   // Инициализация соединения
   const connect = useCallback(() => {
-    const token = localStorage.getItem("token");
+    const token =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
     console.log("🔌 Attempting to connect to socket...");
     console.log("🔌 Socket URL:", SOCKET_URL);
     console.log("🔌 Token available:", !!token);
@@ -38,6 +39,7 @@ export const useSocket = () => {
 
     newSocket.on("connect", () => {
       console.log("✅ Socket connected:", newSocket.id);
+      console.log("✅ Socket object:", newSocket);
       setIsConnected(true);
     });
 
@@ -91,8 +93,13 @@ export const useSocket = () => {
   const joinChat = useCallback(
     (otherUserId) => {
       if (socketRef.current && isConnected) {
-        console.log(`Joining chat with user ${otherUserId}`);
+        console.log(`💬 Joining chat with user ${otherUserId}`);
+        console.log(`💬 Socket ID: ${socketRef.current.id}`);
         socketRef.current.emit("join_chat", { otherUserId });
+      } else {
+        console.log("❌ Cannot join chat: socket not connected");
+        console.log(`❌ Socket exists: ${!!socketRef.current}`);
+        console.log(`❌ Is connected: ${isConnected}`);
       }
     },
     [isConnected]
@@ -102,12 +109,17 @@ export const useSocket = () => {
   const sendMessage = useCallback(
     (receiverId, content, messageType = "text") => {
       if (socketRef.current && isConnected) {
-        console.log(`Sending message to ${receiverId}:`, content);
+        console.log(`📤 Sending message to ${receiverId}:`, content);
+        console.log(`📤 Socket ID: ${socketRef.current.id}`);
         socketRef.current.emit("send_message", {
           receiverId,
           content,
           messageType,
         });
+      } else {
+        console.log("❌ Cannot send message: socket not connected");
+        console.log(`❌ Socket exists: ${!!socketRef.current}`);
+        console.log(`❌ Is connected: ${isConnected}`);
       }
     },
     [isConnected]
@@ -144,18 +156,26 @@ export const useSocket = () => {
   );
 
   // Подписка на события
-  const on = useCallback((event, callback) => {
-    if (socketRef.current) {
-      socketRef.current.on(event, callback);
-    }
-  }, []);
+  const on = useCallback(
+    (event, callback) => {
+      if (socket) {
+        console.log(`📡 Subscribing to event: ${event}`);
+        socket.on(event, callback);
+      }
+    },
+    [socket]
+  );
 
   // Отписка от событий
-  const off = useCallback((event, callback) => {
-    if (socketRef.current) {
-      socketRef.current.off(event, callback);
-    }
-  }, []);
+  const off = useCallback(
+    (event, callback) => {
+      if (socket) {
+        console.log(`📡 Unsubscribing from event: ${event}`);
+        socket.off(event, callback);
+      }
+    },
+    [socket]
+  );
 
   // Очистка при размонтировании
   useEffect(() => {
@@ -165,7 +185,7 @@ export const useSocket = () => {
   }, [disconnect]);
 
   return {
-    socket: socketRef.current,
+    socket,
     isConnected,
     onlineUsers,
     connect,
