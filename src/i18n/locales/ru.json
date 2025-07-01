@@ -199,6 +199,8 @@
     "repeatRequired": "Требует повторения"
   },
   "navbar": {
+    "home": "Главная",
+    "features": "Возможности",
     "showcase": "Презентация",
     "whyChoose": "Почему мы",
     "introduction": "Знакомство",
@@ -207,7 +209,8 @@
     "prices": "Цены",
     "faq": "Вопросы и ответы",
     "contacts": "Контакты",
-    "dashboard": "Панель управления",
+    "dashboard": "Дашборд",
+    "library": "Библиотека",
     "profile": "Профиль",
     "logout": "Выйти",
     "login": "Войти"

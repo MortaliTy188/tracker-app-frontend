@@ -862,7 +862,7 @@ export default function ProfilePage() {
 
   if (!isAuthenticated()) {
     return (
-      <Container maxWidth="sm" sx={{ mt: 4 }}>
+      <Container maxWidth="sm" sx={{ mt: 4, pt: 12 }}>
         <Alert severity="warning">
           Для доступа к личному кабинету необходимо авторизоваться
         </Alert>
@@ -872,7 +872,9 @@ export default function ProfilePage() {
 
   if (isLoading || !userProfile) {
     return (
-      <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+      <Box
+        sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh", pt: 12, mt: 8 }}
+      >
         <Navbar />
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
           <Box
@@ -3083,7 +3085,6 @@ export default function ProfilePage() {
             <Button onClick={() => setFindFriendsModal(false)}>Закрыть</Button>
           </DialogActions>
         </Dialog>
-
         {/* Sent Requests Dialog */}
         <Dialog
           open={sentRequestsModal}
@@ -3134,7 +3135,9 @@ export default function ProfilePage() {
                     <ListItemText
                       primary={request.addressee.name}
                       secondary={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        >
                           <Chip
                             label={`Уровень ${request.addressee.level}`}
                             size="small"
@@ -3143,7 +3146,9 @@ export default function ProfilePage() {
                           />
                           <Typography variant="caption" color="text.secondary">
                             Отправлено:{" "}
-                            {new Date(request.requestDate).toLocaleDateString("ru-RU")}
+                            {new Date(request.requestDate).toLocaleDateString(
+                              "ru-RU"
+                            )}
                           </Typography>
                         </Box>
                       }
@@ -3159,15 +3164,17 @@ export default function ProfilePage() {
                               `Вы уверены, что хотите отменить запрос на дружбу для ${request.addressee.name}?`
                             )
                           ) {
-                            removeFriend(request.friendshipId).then((result) => {
-                              if (result.success) {
-                                showSuccess("Запрос отменен");
-                                loadSentRequests(); // Обновить исходящие запросы
-                                loadFriends(); // Обновить список друзей
-                              } else {
-                                showError(result.message);
+                            removeFriend(request.friendshipId).then(
+                              (result) => {
+                                if (result.success) {
+                                  showSuccess("Запрос отменен");
+                                  loadSentRequests(); // Обновить исходящие запросы
+                                  loadFriends(); // Обновить список друзей
+                                } else {
+                                  showError(result.message);
+                                }
                               }
-                            });
+                            );
                           }
                         }}
                       >

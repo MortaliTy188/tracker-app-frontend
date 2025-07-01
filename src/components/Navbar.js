@@ -12,19 +12,35 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  useScrollTrigger,
+  Slide,
 } from "@mui/material";
 import {
   Person,
-  Settings,
+  Dashboard,
   ExitToApp,
   Login,
-  Dashboard,
+  Home,
+  Info,
+  QuestionAnswer,
+  LibraryBooks,
 } from "@mui/icons-material";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth, useProfile } from "../hooks";
 import { getAvatarUrl } from "../utils/avatarUtils";
 import LanguageSwitcher from "./LanguageSwitcher";
+
+function HideOnScroll(props) {
+  const { children } = props;
+  const trigger = useScrollTrigger();
+
+  return (
+    <Slide appear={false} direction="down" in={!trigger}>
+      {children}
+    </Slide>
+  );
+}
 
 export default function Navbar() {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -47,7 +63,7 @@ export default function Navbar() {
     handleClose();
     window.location.href = "/";
   };
-  const handleProfile = () => {
+  const handleLibrary = () => {
     handleClose();
     window.location.href = "/profile";
   };
@@ -108,155 +124,267 @@ export default function Navbar() {
   }, []);
 
   return (
-    <AppBar
-      position="static"
-      sx={{ backgroundColor: "#fff", color: "#000", padding: 2 }}
-    >
-      <Container maxWidth="xl">
-        <Toolbar disableGutters>
-          <Box
+    <HideOnScroll>
+      <AppBar
+        position="fixed"
+        sx={{
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          backdropFilter: "blur(10px)",
+          borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
+          boxShadow: "0 2px 20px rgba(0, 0, 0, 0.1)",
+        }}
+      >
+        <Container maxWidth="lg">
+          <Toolbar
+            disableGutters
             sx={{
-              flex: 1,
-              display: { xs: "none", md: "flex" },
-              flexDirection: { md: "column", lg: "row" },
+              minHeight: { xs: 64, md: 70 },
+              justifyContent: "space-between",
             }}
           >
-            <Button href="#showcase" color="inherit">
-              {t("navbar.showcase")}
-            </Button>
-            <Button href="#why-choose-us" color="inherit">
-              {t("navbar.whyChoose")}
-            </Button>
-            <Button href="#fast-introduction" color="inherit">
-              {t("navbar.introduction")}
-            </Button>
-            <Button href="#what-will-you-get" color="inherit">
-              {t("navbar.whatYouGet")}
-            </Button>
-          </Box>
-          <Box sx={{ flexGrow: 1, textAlign: "center" }}>
-            <Typography variant="h2">Tracker App</Typography>
-          </Box>
-          <Box
-            sx={{
-              flex: 1,
-              display: { xs: "none", md: "flex" },
-              flexDirection: { md: "column", lg: "row" },
-            }}
-          >
-            <Button href="#reviews" color="inherit">
-              {t("navbar.reviews")}
-            </Button>
-            <Button href="#prices" color="inherit">
-              {t("navbar.prices")}
-            </Button>
-            <Button href="#faq" color="inherit">
-              {t("navbar.faq")}
-            </Button>{" "}
-            <Button href="#contacts" color="inherit">
-              {t("navbar.contacts")}
-            </Button>
-            {isAuthenticated() ? (
-              <>
-                <LanguageSwitcher variant="menu" />
-                <IconButton
-                  onClick={handleClick}
-                  size="small"
-                  sx={{ ml: 2 }}
-                  aria-controls={open ? "account-menu" : undefined}
-                  aria-haspopup="true"
-                  aria-expanded={open ? "true" : undefined}
-                >
-                  {" "}
-                  <Avatar
-                    src={
-                      userProfile?.user?.avatar
-                        ? getAvatarUrl(userProfile.user.avatar)
-                        : undefined
-                    }
-                    sx={{ width: 32, height: 32 }}
+            {/* Logo */}
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Typography
+                variant="h5"
+                component="a"
+                href="/"
+                sx={{
+                  fontWeight: 700,
+                  color: "primary.main",
+                  textDecoration: "none",
+                  fontSize: { xs: "1.2rem", md: "1.5rem" },
+                  background: "linear-gradient(45deg, #1976d2, #42a5f5)",
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                Tracker App
+              </Typography>
+            </Box>
+
+            {/* Navigation Links - только для десктопа */}
+            <Box
+              sx={{
+                display: { xs: "none", md: "flex" },
+                alignItems: "center",
+                gap: 1,
+              }}
+            >
+              {isAuthenticated() ? (
+                // Навигация для авторизованных пользователей
+                <>
+                  <Button
+                    href="/"
+                    startIcon={<Home />}
+                    sx={{
+                      color: "text.primary",
+                      fontWeight: 500,
+                      "&:hover": {
+                        backgroundColor: "rgba(25, 118, 210, 0.1)",
+                      },
+                    }}
                   >
-                    {!userProfile?.user?.avatar &&
-                      (userProfile?.user?.name ? (
-                        userProfile.user.name.charAt(0)
-                      ) : (
-                        <Person />
-                      ))}
-                  </Avatar>
-                </IconButton>
-                <Menu
-                  anchorEl={anchorEl}
-                  id="account-menu"
-                  open={open}
-                  onClose={handleClose}
-                  onClick={handleClose}
-                  PaperProps={{
-                    elevation: 0,
-                    sx: {
-                      overflow: "visible",
-                      filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
-                      mt: 1.5,
-                      "& .MuiAvatar-root": {
-                        width: 32,
-                        height: 32,
-                        ml: -0.5,
-                        mr: 1,
+                    {t("navbar.home")}
+                  </Button>
+                  <Button
+                    href="/dashboard"
+                    startIcon={<Dashboard />}
+                    sx={{
+                      color: "text.primary",
+                      fontWeight: 500,
+                      "&:hover": {
+                        backgroundColor: "rgba(25, 118, 210, 0.1)",
                       },
-                      "&:before": {
-                        content: '""',
-                        display: "block",
-                        position: "absolute",
-                        top: 0,
-                        right: 14,
-                        width: 10,
-                        height: 10,
-                        bgcolor: "background.paper",
-                        transform: "translateY(-50%) rotate(45deg)",
-                        zIndex: 0,
+                    }}
+                  >
+                    {t("navbar.dashboard")}
+                  </Button>
+                  <Button
+                    href="/profile"
+                    startIcon={<LibraryBooks />}
+                    sx={{
+                      color: "text.primary",
+                      fontWeight: 500,
+                      "&:hover": {
+                        backgroundColor: "rgba(25, 118, 210, 0.1)",
                       },
-                    },
-                  }}
-                  transformOrigin={{ horizontal: "right", vertical: "top" }}
-                  anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
-                >
-                  {" "}
-                  <MenuItem onClick={handleDashboard}>
-                    <ListItemIcon>
-                      <Dashboard fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText>{t("navbar.dashboard")}</ListItemText>
-                  </MenuItem>
-                  <MenuItem onClick={handleProfile}>
-                    <ListItemIcon>
-                      <Person fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText>{t("navbar.profile")}</ListItemText>
-                  </MenuItem>
-                  <Divider />
-                  <MenuItem onClick={handleLogout}>
-                    <ListItemIcon>
-                      <ExitToApp fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText>{t("navbar.logout")}</ListItemText>
-                  </MenuItem>
-                </Menu>
-              </>
-            ) : (
-              <>
-                <LanguageSwitcher variant="menu" />
+                    }}
+                  >
+                    {t("navbar.library")}
+                  </Button>
+                </>
+              ) : (
+                // Навигация для неавторизованных пользователей
+                <>
+                  <Button
+                    href="/"
+                    startIcon={<Home />}
+                    sx={{
+                      color: "text.primary",
+                      fontWeight: 500,
+                      "&:hover": {
+                        backgroundColor: "rgba(25, 118, 210, 0.1)",
+                      },
+                    }}
+                  >
+                    {t("navbar.home")}
+                  </Button>
+                  <Button
+                    href="#features"
+                    startIcon={<Info />}
+                    sx={{
+                      color: "text.primary",
+                      fontWeight: 500,
+                      "&:hover": {
+                        backgroundColor: "rgba(25, 118, 210, 0.1)",
+                      },
+                    }}
+                  >
+                    {t("navbar.features")}
+                  </Button>
+                  <Button
+                    href="#faq"
+                    startIcon={<QuestionAnswer />}
+                    sx={{
+                      color: "text.primary",
+                      fontWeight: 500,
+                      "&:hover": {
+                        backgroundColor: "rgba(25, 118, 210, 0.1)",
+                      },
+                    }}
+                  >
+                    {t("navbar.faq")}
+                  </Button>
+                </>
+              )}
+            </Box>
+
+            {/* Right side - Language switcher and user menu */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <LanguageSwitcher />
+
+              {isAuthenticated() ? (
+                <>
+                  <IconButton
+                    onClick={handleClick}
+                    size="small"
+                    aria-controls={open ? "account-menu" : undefined}
+                    aria-haspopup="true"
+                    aria-expanded={open ? "true" : undefined}
+                    sx={{
+                      border: "2px solid",
+                      borderColor: "primary.main",
+                      "&:hover": {
+                        backgroundColor: "rgba(25, 118, 210, 0.1)",
+                      },
+                    }}
+                  >
+                    <Avatar
+                      src={
+                        userProfile?.user?.avatar
+                          ? getAvatarUrl(userProfile.user.avatar)
+                          : undefined
+                      }
+                      sx={{ width: 32, height: 32 }}
+                    >
+                      {!userProfile?.user?.avatar &&
+                        (userProfile?.user?.name ? (
+                          userProfile.user.name.charAt(0)
+                        ) : (
+                          <Person />
+                        ))}
+                    </Avatar>
+                  </IconButton>
+                  <Menu
+                    anchorEl={anchorEl}
+                    id="account-menu"
+                    open={open}
+                    onClose={handleClose}
+                    onClick={handleClose}
+                    PaperProps={{
+                      elevation: 8,
+                      sx: {
+                        overflow: "visible",
+                        filter: "drop-shadow(0px 4px 20px rgba(0,0,0,0.15))",
+                        mt: 1.5,
+                        borderRadius: 2,
+                        minWidth: 200,
+                        "& .MuiAvatar-root": {
+                          width: 32,
+                          height: 32,
+                          ml: -0.5,
+                          mr: 1,
+                        },
+                        "&:before": {
+                          content: '""',
+                          display: "block",
+                          position: "absolute",
+                          top: 0,
+                          right: 14,
+                          width: 10,
+                          height: 10,
+                          bgcolor: "background.paper",
+                          transform: "translateY(-50%) rotate(45deg)",
+                          zIndex: 0,
+                        },
+                      },
+                    }}
+                    transformOrigin={{ horizontal: "right", vertical: "top" }}
+                    anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+                  >
+                    <MenuItem onClick={handleDashboard}>
+                      <ListItemIcon>
+                        <Dashboard fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText>{t("navbar.dashboard")}</ListItemText>
+                    </MenuItem>
+                    <MenuItem onClick={handleLibrary}>
+                      <ListItemIcon>
+                        <LibraryBooks fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText>{t("navbar.library")}</ListItemText>
+                    </MenuItem>
+                    <MenuItem onClick={handleLibrary}>
+                      <ListItemIcon>
+                        <Person fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText>{t("navbar.profile")}</ListItemText>
+                    </MenuItem>
+                    <Divider />
+                    <MenuItem onClick={handleLogout}>
+                      <ListItemIcon>
+                        <ExitToApp fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText>{t("navbar.logout")}</ListItemText>
+                    </MenuItem>
+                  </Menu>
+                </>
+              ) : (
                 <Button
-                  color="inherit"
+                  variant="contained"
                   startIcon={<Login />}
                   onClick={handleLogin}
-                  sx={{ ml: 2 }}
+                  sx={{
+                    borderRadius: 3,
+                    px: 3,
+                    py: 1,
+                    fontWeight: 600,
+                    boxShadow: "0 4px 14px rgba(25, 118, 210, 0.3)",
+                    "&:hover": {
+                      boxShadow: "0 6px 20px rgba(25, 118, 210, 0.4)",
+                      transform: "translateY(-1px)",
+                    },
+                    transition: "all 0.3s ease",
+                  }}
                 >
                   {t("navbar.login")}
                 </Button>
-              </>
-            )}
-          </Box>
-        </Toolbar>
-      </Container>
-    </AppBar>
+              )}
+            </Box>
+          </Toolbar>
+        </Container>
+      </AppBar>
+    </HideOnScroll>
   );
 }

@@ -193,8 +193,9 @@ export default function LandingPage() {
             theme.palette.primary.main,
             0.1
           )} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
-          pt: 8,
+          pt: 12,
           pb: 8,
+          mt: 8, // Добавляем отступ от навбара
         }}
       >
         <Container maxWidth="lg">

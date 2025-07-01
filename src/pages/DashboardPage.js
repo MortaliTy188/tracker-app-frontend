@@ -516,7 +516,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+    <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh", pt: 12, mt: 8 }}>
       <Navbar />
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
         {/* Main white container with Paper styling */}

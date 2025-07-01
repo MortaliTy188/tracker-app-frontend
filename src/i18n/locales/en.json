@@ -188,6 +188,8 @@
     "Planned": "Planned"
   },
   "navbar": {
+    "home": "Home",
+    "features": "Features",
     "showcase": "Showcase",
     "whyChoose": "Why Choose Us",
     "introduction": "Introduction",
@@ -197,6 +199,7 @@
     "faq": "FAQ",
     "contacts": "Contacts",
     "dashboard": "Dashboard",
+    "library": "Library",
     "profile": "Profile",
     "logout": "Logout",
     "login": "Login"

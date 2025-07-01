@@ -864,7 +864,9 @@ export default function ProfilePage() {
 
   if (!isAuthenticated()) {
     return (
-      <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+      <Box
+        sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh", pt: 12, mt: 8 }}
+      >
         <Navbar />
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
           <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
@@ -877,7 +879,9 @@ export default function ProfilePage() {
 
   if (isLoading || !userProfile) {
     return (
-      <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+      <Box
+        sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh", pt: 12, mt: 8 }}
+      >
         <Navbar />
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
           <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
@@ -890,7 +894,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+    <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh", pt: 12, mt: 8 }}>
       <Navbar />
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         {/* Breadcrumbs */}
