@@ -20,7 +20,8 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: "ru", // Русский как основной язык
+    lng: "en", // Английский как язык по умолчанию
+    fallbackLng: "en", // Английский как резервный язык
     debug: process.env.NODE_ENV === "development",
 
     detection: {

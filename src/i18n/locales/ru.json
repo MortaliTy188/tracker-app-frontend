@@ -4,7 +4,15 @@
     "welcome": "Добро пожаловать",
     "welcomeWithName": "Добро пожаловать, {{name}}!",
     "lastActivity": "Последняя активность: {{date}}",
-    "dataUpdated": "Данные обновлены"
+    "dataUpdated": "Данные обновлены",
+    "quickActions": {
+      "newSkillTitle": "Создать новый навык",
+      "newNoteTitle": "Создать новую заметку",
+      "skillCreated": "Навык успешно создан!",
+      "skillError": "Ошибка при создании навыка",
+      "noteCreated": "Заметка успешно создана!",
+      "noteError": "Ошибка при создании заметки"
+    }
   },
   "stats": {
     "skillsStudying": "Навыков изучается",
@@ -184,7 +192,31 @@
     "search": "Поиск",
     "filter": "Фильтр",
     "sort": "Сортировка",
-    "language": "Язык"
+    "language": "Язык",
+    "create": "Создать",
+    "creating": "Создание..."
+  },
+  "form": {
+    "edit": "Редактировать",
+    "save": "Сохранить изменения",
+    "cancel": "Отмена",
+    "updateSuccess": "Профиль успешно обновлен!",
+    "passwordsNotMatch": "Пароли не совпадают",
+    "passwordUpdateSuccess": "Пароль успешно изменен!",
+    "avatarUpdateSuccess": "Аватар успешно обновлен!",
+    "avatarUpdateLocalError": "Аватар обновлен локально, но не сохранен на сервере",
+    "avatarUpdateError": "Произошла ошибка. Аватар показан локально",
+    "fields": {
+      "skillName": "Название навыка",
+      "description": "Описание",
+      "category": "Категория",
+      "noteTitle": "Заголовок заметки",
+      "noteContent": "Содержание заметки",
+      "topic": "Тема"
+    },
+    "validation": {
+      "required": "Обязательное поле"
+    }
   },
   "status": {
     "не начато": "Не начато",
@@ -239,7 +271,18 @@
       "passwordUpdateSuccess": "Пароль успешно изменен!",
       "avatarUpdateSuccess": "Аватар успешно обновлен!",
       "avatarUpdateLocalError": "Аватар обновлен локально, но не сохранен на сервере",
-      "avatarUpdateError": "Произошла ошибка. Аватар показан локально"
+      "avatarUpdateError": "Произошла ошибка. Аватар показан локально",
+      "fields": {
+        "skillName": "Название навыка",
+        "description": "Описание",
+        "category": "Категория",
+        "noteTitle": "Заголовок заметки",
+        "noteContent": "Содержание заметки",
+        "topic": "Тема"
+      },
+      "validation": {
+        "required": "Обязательное поле"
+      }
     },
     "status": {
       "success": "Успешно",

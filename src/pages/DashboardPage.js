@@ -37,6 +37,15 @@ import {
   Badge,
   Skeleton,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material";
 import {
   TrendingUp,
@@ -95,6 +104,27 @@ export default function DashboardPage() {
   // States for loading
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Modal states
+  const [skillModalOpen, setSkillModalOpen] = useState(false);
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [topics, setTopics] = useState([]);
+  const [statuses, setStatuses] = useState([]);
+
+  // Form states
+  const [skillForm, setSkillForm] = useState({
+    name: "",
+    description: "",
+    category_id: "",
+  });
+  const [noteForm, setNoteForm] = useState({
+    title: "",
+    content: "",
+    topic_id: "",
+  });
+  const [formErrors, setFormErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Real data from hooks
   const { profileData, isLoading: profileLoading, getFullInfo } = useProfile();
@@ -179,6 +209,45 @@ export default function DashboardPage() {
       showError("Ошибка загрузки данных панели управления");
     } finally {
       setIsLoadingData(false);
+    }
+  };
+
+  // Load categories, topics and statuses for forms
+  const loadFormData = async () => {
+    const API_BASE_URL =
+      process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
+    const token =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
+
+    try {
+      // Load categories
+      const categoriesResponse = await fetch(`${API_BASE_URL}/api/categories`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (categoriesResponse.ok) {
+        const categoriesData = await categoriesResponse.json();
+        setCategories(categoriesData.data?.categories || []);
+      }
+
+      // Load topics
+      const topicsResponse = await fetch(`${API_BASE_URL}/api/topics`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (topicsResponse.ok) {
+        const topicsData = await topicsResponse.json();
+        setTopics(topicsData.data?.topics || []);
+      }
+
+      // Load statuses
+      const statusesResponse = await fetch(`${API_BASE_URL}/api/statuses`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (statusesResponse.ok) {
+        const statusesData = await statusesResponse.json();
+        setStatuses(statusesData.data?.statuses || []);
+      }
+    } catch (error) {
+      console.error("Error loading form data:", error);
     }
   };
 
@@ -477,12 +546,10 @@ export default function DashboardPage() {
         navigate("/profile");
         break;
       case "newSkill":
-        navigate("/profile");
-        showSuccess(t("navigation.goToSkills"));
+        setSkillModalOpen(true);
         break;
       case "newNote":
-        navigate("/profile");
-        showSuccess(t("navigation.goToNotes"));
+        setNoteModalOpen(true);
         break;
       case "stats":
         navigate("/profile");
@@ -493,10 +560,125 @@ export default function DashboardPage() {
     }
   };
 
+  // Modal handlers
+  const handleCloseSkillModal = () => {
+    setSkillModalOpen(false);
+    setSkillForm({ name: "", description: "", category_id: "" });
+    setFormErrors({});
+  };
+
+  const handleCloseNoteModal = () => {
+    setNoteModalOpen(false);
+    setNoteForm({ title: "", content: "", topic_id: "" });
+    setFormErrors({});
+  };
+
+  const handleSkillFormChange = (e) => {
+    setSkillForm({ ...skillForm, [e.target.name]: e.target.value });
+    if (formErrors[e.target.name]) {
+      setFormErrors({ ...formErrors, [e.target.name]: "" });
+    }
+  };
+
+  const handleNoteFormChange = (e) => {
+    setNoteForm({ ...noteForm, [e.target.name]: e.target.value });
+    if (formErrors[e.target.name]) {
+      setFormErrors({ ...formErrors, [e.target.name]: "" });
+    }
+  };
+
+  // Create skill
+  const handleCreateSkill = async () => {
+    if (!skillForm.name || !skillForm.category_id) {
+      setFormErrors({
+        name: !skillForm.name ? t("form.validation.required") : "",
+        category_id: !skillForm.category_id
+          ? t("form.validation.required")
+          : "",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    const API_BASE_URL =
+      process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
+    const token =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/skills`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(skillForm),
+      });
+
+      if (response.ok) {
+        showSuccess(t("dashboard.quickActions.skillCreated"));
+        handleCloseSkillModal();
+        await loadSkills();
+        await loadSkillsStats();
+      } else {
+        const errorData = await response.json();
+        showError(errorData.message || t("dashboard.quickActions.skillError"));
+      }
+    } catch (error) {
+      showError(t("dashboard.quickActions.skillError"));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Create note
+  const handleCreateNote = async () => {
+    if (!noteForm.title || !noteForm.content || !noteForm.topic_id) {
+      setFormErrors({
+        title: !noteForm.title ? t("form.validation.required") : "",
+        content: !noteForm.content ? t("form.validation.required") : "",
+        topic_id: !noteForm.topic_id ? t("form.validation.required") : "",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    const API_BASE_URL =
+      process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
+    const token =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/notes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(noteForm),
+      });
+
+      if (response.ok) {
+        showSuccess(t("dashboard.quickActions.noteCreated"));
+        handleCloseNoteModal();
+        await loadNotes();
+        await loadNotesStats();
+      } else {
+        const errorData = await response.json();
+        showError(errorData.message || t("dashboard.quickActions.noteError"));
+      }
+    } catch (error) {
+      showError(t("dashboard.quickActions.noteError"));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Loading state
   useEffect(() => {
     if (isAuthenticated()) {
       loadDashboardData();
+      loadFormData();
     }
   }, []);
 
@@ -1251,6 +1433,162 @@ export default function DashboardPage() {
           </Grid>
         </Paper>
       </Container>
+
+      {/* Create Skill Modal */}
+      <Dialog
+        open={skillModalOpen}
+        onClose={handleCloseSkillModal}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{t("dashboard.quickActions.newSkillTitle")}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            name="name"
+            label={t("form.fields.skillName")}
+            fullWidth
+            variant="outlined"
+            value={skillForm.name}
+            onChange={handleSkillFormChange}
+            error={!!formErrors.name}
+            helperText={formErrors.name}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            name="description"
+            label={t("form.fields.description")}
+            fullWidth
+            multiline
+            rows={3}
+            variant="outlined"
+            value={skillForm.description}
+            onChange={handleSkillFormChange}
+            sx={{ mb: 2 }}
+          />
+          <FormControl
+            fullWidth
+            variant="outlined"
+            error={!!formErrors.category_id}
+          >
+            <InputLabel>{t("form.fields.category")}</InputLabel>
+            <Select
+              name="category_id"
+              value={skillForm.category_id}
+              onChange={handleSkillFormChange}
+              label={t("form.fields.category")}
+            >
+              {categories.map((category) => (
+                <MenuItem key={category.id} value={category.id}>
+                  {category.name}
+                </MenuItem>
+              ))}
+            </Select>
+            {formErrors.category_id && (
+              <Typography
+                variant="caption"
+                color="error"
+                sx={{ mt: 0.5, ml: 1.5 }}
+              >
+                {formErrors.category_id}
+              </Typography>
+            )}
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseSkillModal} disabled={isSubmitting}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            onClick={handleCreateSkill}
+            variant="contained"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? t("common.creating") : t("common.create")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Create Note Modal */}
+      <Dialog
+        open={noteModalOpen}
+        onClose={handleCloseNoteModal}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>{t("dashboard.quickActions.newNoteTitle")}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            name="title"
+            label={t("form.fields.noteTitle")}
+            fullWidth
+            variant="outlined"
+            value={noteForm.title}
+            onChange={handleNoteFormChange}
+            error={!!formErrors.title}
+            helperText={formErrors.title}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            name="content"
+            label={t("form.fields.noteContent")}
+            fullWidth
+            multiline
+            rows={6}
+            variant="outlined"
+            value={noteForm.content}
+            onChange={handleNoteFormChange}
+            error={!!formErrors.content}
+            helperText={formErrors.content}
+            sx={{ mb: 2 }}
+          />
+          <FormControl
+            fullWidth
+            variant="outlined"
+            error={!!formErrors.topic_id}
+          >
+            <InputLabel>{t("form.fields.topic")}</InputLabel>
+            <Select
+              name="topic_id"
+              value={noteForm.topic_id}
+              onChange={handleNoteFormChange}
+              label={t("form.fields.topic")}
+            >
+              {topics.map((topic) => (
+                <MenuItem key={topic.id} value={topic.id}>
+                  {topic.name} ({topic.skill?.name})
+                </MenuItem>
+              ))}
+            </Select>
+            {formErrors.topic_id && (
+              <Typography
+                variant="caption"
+                color="error"
+                sx={{ mt: 0.5, ml: 1.5 }}
+              >
+                {formErrors.topic_id}
+              </Typography>
+            )}
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseNoteModal} disabled={isSubmitting}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            onClick={handleCreateNote}
+            variant="contained"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? t("common.creating") : t("common.create")}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

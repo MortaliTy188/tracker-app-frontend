@@ -4,7 +4,15 @@
     "welcome": "Welcome",
     "welcomeWithName": "Welcome, {{name}}!",
     "lastActivity": "Last activity: {{date}}",
-    "dataUpdated": "Data updated"
+    "dataUpdated": "Data updated",
+    "quickActions": {
+      "newSkillTitle": "Create New Skill",
+      "newNoteTitle": "Create New Note",
+      "skillCreated": "Skill created successfully!",
+      "skillError": "Error creating skill",
+      "noteCreated": "Note created successfully!",
+      "noteError": "Error creating note"
+    }
   },
   "stats": {
     "skillsStudying": "Skills studying",
@@ -75,7 +83,14 @@
     "title": "Skills progress",
     "completed": "completed",
     "noSkills": "No skills created yet. Create your first skill!",
-    "categories": "Category distribution",
+    "categoriesDistribution": "Category distribution",
+    "categories": {
+      "Языки": "Languages",
+      "Программирование": "Programming", 
+      "Менеджмент": "Management",
+      "Маркетинг": "Marketing",
+      "Дизайн": "Design"
+    },
     "yourSkills": "Your skills",
     "generalStats": "General skills statistics",
     "totalSkills": "Total skills",
@@ -177,7 +192,31 @@
     "search": "Search",
     "filter": "Filter",
     "sort": "Sort",
-    "language": "Language"
+    "language": "Language",
+    "create": "Create",
+    "creating": "Creating..."
+  },
+  "form": {
+    "edit": "Edit",
+    "save": "Save changes",
+    "cancel": "Cancel",
+    "updateSuccess": "Profile successfully updated!",
+    "passwordsNotMatch": "Passwords do not match",
+    "passwordUpdateSuccess": "Password successfully changed!",
+    "avatarUpdateSuccess": "Avatar successfully updated!",
+    "avatarUpdateLocalError": "Avatar updated locally, but not saved to server",
+    "avatarUpdateError": "An error occurred. Avatar shown locally",
+    "fields": {
+      "skillName": "Skill Name",
+      "description": "Description",
+      "category": "Category",
+      "noteTitle": "Note Title",
+      "noteContent": "Note Content",
+      "topic": "Topic"
+    },
+    "validation": {
+      "required": "Required field"
+    }
   },
   "status": {
     "Завершено": "Completed",
@@ -228,7 +267,18 @@
       "passwordUpdateSuccess": "Password successfully changed!",
       "avatarUpdateSuccess": "Avatar successfully updated!",
       "avatarUpdateLocalError": "Avatar updated locally, but not saved to server",
-      "avatarUpdateError": "An error occurred. Avatar shown locally"
+      "avatarUpdateError": "An error occurred. Avatar shown locally",
+      "fields": {
+        "skillName": "Skill Name",
+        "description": "Description",
+        "category": "Category",
+        "noteTitle": "Note Title",
+        "noteContent": "Note Content",
+        "topic": "Topic"
+      },
+      "validation": {
+        "required": "Required field"
+      }
     },
     "status": {
       "success": "Success",
@@ -606,5 +656,8 @@
       "beginnerLevel": "Beginner",
       "daysStreak": "days"
     }
+  },
+  "skill": {
+    "categoriesTitle": "Skill Categories"
   }
 }
