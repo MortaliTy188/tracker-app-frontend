@@ -15,8 +15,7 @@ export const useSocket = () => {
 
   // Инициализация соединения
   const connect = useCallback(() => {
-    const token =
-      localStorage.getItem("token") || sessionStorage.getItem("token");
+    const token = localStorage.getItem("token");
     console.log("🔌 Attempting to connect to socket...");
     console.log("🔌 Socket URL:", SOCKET_URL);
     console.log("🔌 Token available:", !!token);
@@ -32,13 +31,9 @@ export const useSocket = () => {
     }
 
     console.log("🔌 Creating new socket connection...");
-    console.log("🔌 Auth config:", { token: token.substring(0, 20) + "..." });
-
     const newSocket = io(SOCKET_URL, {
       auth: { token },
       transports: ["websocket", "polling"],
-      timeout: 10000,
-      forceNew: true,
     });
 
     newSocket.on("connect", () => {
@@ -52,22 +47,8 @@ export const useSocket = () => {
     });
 
     newSocket.on("connect_error", (error) => {
-      console.error("❌ Socket connection error:", error);
-      console.error("❌ Error details:", error.message);
+      console.error("Socket connection error:", error);
       setIsConnected(false);
-    });
-
-    newSocket.on("error", (error) => {
-      console.error("❌ Socket error:", error);
-    });
-
-    // Обработка аутентификации
-    newSocket.on("authenticated", (data) => {
-      console.log("✅ Socket authenticated:", data);
-    });
-
-    newSocket.on("unauthorized", (error) => {
-      console.error("❌ Socket unauthorized:", error);
     });
 
     // Обработка статуса пользователей
@@ -134,9 +115,9 @@ export const useSocket = () => {
 
   // Уведомление о начале печатания
   const startTyping = useCallback(
-    (otherUserId) => {
+    (receiverId) => {
       if (socketRef.current && isConnected) {
-        socketRef.current.emit("typing_start", { otherUserId });
+        socketRef.current.emit("typing_start", { receiverId });
       }
     },
     [isConnected]
@@ -144,9 +125,9 @@ export const useSocket = () => {
 
   // Уведомление об окончании печатания
   const stopTyping = useCallback(
-    (otherUserId) => {
+    (receiverId) => {
       if (socketRef.current && isConnected) {
-        socketRef.current.emit("typing_stop", { otherUserId });
+        socketRef.current.emit("typing_stop", { receiverId });
       }
     },
     [isConnected]
@@ -154,13 +135,9 @@ export const useSocket = () => {
 
   // Отметить сообщения как прочитанные
   const markAsRead = useCallback(
-    (otherUserId, messageIds) => {
+    (senderId) => {
       if (socketRef.current && isConnected) {
-        const payload = { otherUserId };
-        if (Array.isArray(messageIds) && messageIds.length > 0) {
-          payload.messageIds = messageIds;
-        }
-        socketRef.current.emit("mark_as_read", payload);
+        socketRef.current.emit("mark_as_read", { senderId });
       }
     },
     [isConnected]

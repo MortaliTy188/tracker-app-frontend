@@ -1,11 +1,21 @@
 .App {
   text-align: center;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 /* App.css */
 html,
-body {
+body,
+#root {
   overflow-x: hidden;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  overflow-y: auto;
 }
 
 .App-logo {

@@ -75,18 +75,7 @@
     "title": "Skills progress",
     "completed": "completed",
     "noSkills": "No skills created yet. Create your first skill!",
-    "categories": {
-      "Языки": "Languages",
-      "Программирование": "Programming",
-      "Менеджмент": "Management",
-      "Маркетинг": "Marketing",
-      "Дизайн": "Design",
-      "languages": "Languages",
-      "programming": "Programming",
-      "management": "Management",
-      "marketing": "Marketing",
-      "design": "Design"
-    },
+    "categories": "Category distribution",
     "yourSkills": "Your skills",
     "generalStats": "General skills statistics",
     "totalSkills": "Total skills",
@@ -163,8 +152,7 @@
       "rare": "Rare",
       "epic": "Epic",
       "legendary": "Legendary"
-    },
-    "notReceived": "Not received"
+    }
   },
   "navigation": {
     "goToSkills": "Go to 'Skills' tab to create a new skill",
@@ -192,16 +180,12 @@
     "language": "Language"
   },
   "status": {
-    "не начато": "Not started",
-    "в процессе": "In progress",
-    "на паузе": "Paused",
-    "завершено": "Completed",
-    "требует повторения": "Repeat required",
-    "notStarted": "Not started",
-    "inProgress": "In progress",
-    "paused": "Paused",
-    "completed": "Completed",
-    "repeatRequired": "Repeat required"
+    "Завершено": "Completed",
+    "Completed": "Completed",
+    "В процессе": "In Progress",
+    "In Progress": "In Progress",
+    "Запланировано": "Planned",
+    "Planned": "Planned"
   },
   "navbar": {
     "showcase": "Showcase",
@@ -494,12 +478,130 @@
     "createSkill": "Create Skill",
     "name": "Skill Name",
     "description": "Description",
-    "category": "Category",
-    "create": "Create",
-    "createRequiredFields": "Please fill in all required fields",
-    "createError": "Error creating skill"
+    "category": "Category"
   },
-  "skill": {
-    "categoriesTitle": "Skill Categories"
+  "landing": {
+    "hero": {
+      "title": "Develop skills effectively",
+      "subtitle": "Modern platform for tracking learning progress. Manage skills, create notes, earn achievements and communicate with like-minded people.",
+      "startFree": "Start for free",
+      "viewDemo": "View demo"
+    },
+    "features": {
+      "title": "Platform features",
+      "subtitle": "All the necessary tools for effective learning",
+      "skillManagement": {
+        "title": "Skill Management",
+        "description": "Create, track and develop your skills with detailed progress statistics"
+      },
+      "topicOrganization": {
+        "title": "Topic Organization",
+        "description": "Break skills into topics, track completion status and progress of each topic"
+      },
+      "smartNotes": {
+        "title": "Smart Notes",
+        "description": "Create notes, link them to topics and skills for better knowledge organization"
+      },
+      "achievements": {
+        "title": "Achievement System",
+        "description": "Earn achievements for activity, get motivated through gamification"
+      },
+      "social": {
+        "title": "Social Features",
+        "description": "Add friends, track their progress, share experiences"
+      },
+      "chat": {
+        "title": "Built-in Chat",
+        "description": "Communicate with friends, discuss progress, share knowledge"
+      }
+    },
+    "stats": {
+      "activeUsers": "Active users",
+      "skillsTracked": "Skills tracked",
+      "topicsLearned": "Topics learned",
+      "notesCreated": "Notes created"
+    },
+    "testimonials": {
+      "title": "User testimonials",
+      "subtitle": "What our users say about us",
+      "user1": {
+        "name": "Anna Petrova",
+        "role": "Frontend Developer",
+        "comment": "Great app for tracking progress in learning technologies. I especially like the achievement system!"
+      },
+      "user2": {
+        "name": "Mikhail Sidorov",
+        "role": "Data Scientist",
+        "comment": "I've been using it for six months. It helps structure learning and not lose motivation. Recommend!"
+      },
+      "user3": {
+        "name": "Elena Volkova",
+        "role": "UX Designer",
+        "comment": "Beautiful interface, convenient navigation. All functions work like clockwork. Top app!"
+      }
+    },
+    "benefits": {
+      "title": "Why choose us?",
+      "easeOfUse": {
+        "title": "Ease of use",
+        "description": "Intuitive interface that requires no training"
+      },
+      "multilingual": {
+        "title": "Language support",
+        "description": "Russian and English interface"
+      },
+      "security": {
+        "title": "Data security",
+        "description": "Modern protection and encryption methods"
+      },
+      "performance": {
+        "title": "High performance",
+        "description": "Fast loading and responsive interface"
+      },
+      "analytics": {
+        "title": "Detailed analytics",
+        "description": "Progress charts and learning statistics"
+      },
+      "gamification": {
+        "title": "Gamification",
+        "description": "Achievement system and motivational elements"
+      }
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "whatIs": {
+        "question": "What is Tracker App?",
+        "answer": "Tracker App is an application for tracking and developing your skills. You can create skills, break them into topics, make notes and track progress."
+      },
+      "pricing": {
+        "question": "How much does it cost to use?",
+        "answer": "The basic version of the app is completely free. Premium features will be available in future updates."
+      },
+      "offline": {
+        "question": "Can I use it without internet?",
+        "answer": "The app requires an internet connection for data synchronization and social features."
+      },
+      "mobile": {
+        "question": "Is mobile version supported?",
+        "answer": "The web version is adapted for mobile devices. Native mobile apps are planned for the future."
+      }
+    },
+    "cta": {
+      "title": "Ready to start your journey?",
+      "subtitle": "Join thousands of users who are already developing their skills with our platform",
+      "startNow": "Start right now"
+    },
+    "footer": {
+      "description": "Modern platform for skill development and learning progress tracking.",
+      "copyright": "© 2025 Tracker App. All rights reserved."
+    },
+    "demo": {
+      "skillsTitle": "Your Skills",
+      "reactProgress": "React Development",
+      "nodeProgress": "Node.js Backend",
+      "completed": "completed",
+      "beginnerLevel": "Beginner",
+      "daysStreak": "days"
+    }
   }
 }

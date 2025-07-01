@@ -13,8 +13,7 @@ const api = axios.create({
 
 // Добавляем token в заголовки
 api.interceptors.request.use((config) => {
-  const token =
-    localStorage.getItem("token") || sessionStorage.getItem("token");
+  const token = localStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -60,14 +59,9 @@ export const sendMessage = async (
 /**
  * Отметить сообщения как прочитанные
  */
-export const markMessagesAsRead = async (userId, messageIds) => {
+export const markMessagesAsRead = async (userId) => {
   try {
-    let response;
-    if (Array.isArray(messageIds) && messageIds.length > 0) {
-      response = await api.patch(`/api/chat/read/${userId}`, { messageIds });
-    } else {
-      response = await api.patch(`/api/chat/read/${userId}`);
-    }
+    const response = await api.post(`/api/chat/mark-read/${userId}`);
     return response.data;
   } catch (error) {
     console.error("Error marking messages as read:", error);

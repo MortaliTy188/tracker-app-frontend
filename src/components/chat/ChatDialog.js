@@ -37,8 +37,6 @@ const ChatDialog = ({
   friend, // объект друга с которым ведется переписка
   currentUser,
 }) => {
-  // Диагностика currentUser и сообщений
-  console.log("[ChatDialog] currentUser:", currentUser);
   const { t, i18n } = useTranslation();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -112,7 +110,6 @@ const ChatDialog = ({
       is_read: false,
       created_at: new Date().toISOString(),
       sender: currentUser,
-      isTemp: true, // <--- флаг временного сообщения
     };
 
     setMessages((prev) => [...prev, tempMessage]);
@@ -190,35 +187,20 @@ const ChatDialog = ({
 
     const handleNewMessage = (data) => {
       console.log("New message received:", data);
-      // Универсальная обработка: поддержка обоих форматов
-      const message = data.message || data;
-      if (!message) return;
       if (
-        Number(message.sender_id) === Number(friend?.id) ||
-        Number(message.receiver_id) === Number(friend?.id)
+        data.message.sender_id === friend?.id ||
+        data.message.receiver_id === friend?.id
       ) {
         setMessages((prev) => {
-          // Если есть временное сообщение (tempMessage), заменяем его на серверное
-          const tempIndex = prev.findIndex(
-            (msg) =>
-              msg.isTemp &&
-              msg.content === message.content &&
-              Number(msg.sender_id) === Number(message.sender_id) &&
-              Number(msg.receiver_id) === Number(message.receiver_id)
-          );
-          if (tempIndex !== -1) {
-            const newArr = [...prev];
-            newArr[tempIndex] = message;
-            return newArr;
-          }
-          // Проверяем, нет ли уже такого сообщения по id
-          const exists = prev.find((msg) => msg.id === message.id);
+          // Проверяем, нет ли уже такого сообщения
+          const exists = prev.find((msg) => msg.id === data.message.id);
           if (exists) return prev;
-          return [...prev, message];
+
+          return [...prev, data.message];
         });
 
         // Отмечаем как прочитанное если получили от друга
-        if (Number(message.sender_id) === Number(friend?.id)) {
+        if (data.message.sender_id === friend?.id) {
           markAsRead(friend.id);
         }
       }
@@ -270,17 +252,11 @@ const ChatDialog = ({
   // Отметка сообщений как прочитанных при открытии
   useEffect(() => {
     if (open && friend?.id && isConnected) {
-      const unreadIds = messages
-        .filter((msg) => !msg.is_read && msg.sender_id === friend.id)
-        .map((msg) => msg.id);
-      if (unreadIds.length > 0) {
-        markAsRead(friend.id, unreadIds);
-        markMessagesAsRead(friend.id, unreadIds).catch(console.error);
-      } else {
-        markAsRead(friend.id);
-      }
+      markAsRead(friend.id);
+      // Также через REST API
+      markMessagesAsRead(friend.id).catch(console.error);
     }
-  }, [open, friend?.id, isConnected, markAsRead, messages]);
+  }, [open, friend?.id, isConnected, markAsRead]);
 
   // Очистка таймера при размонтировании
   useEffect(() => {
@@ -394,18 +370,7 @@ const ChatDialog = ({
             </Box>
           ) : (
             messages.map((message, index) => {
-              // Диагностика sender_id и currentUser.id
-              console.log(
-                `[ChatDialog] msg.id=${message.id} sender_id=`,
-                message.sender_id,
-                typeof message.sender_id,
-                "currentUser.id=",
-                currentUser?.id,
-                typeof currentUser?.id
-              );
-              const isOwn =
-                currentUser &&
-                Number(message.sender_id) === Number(currentUser.id);
+              const isOwn = message.sender_id === currentUser.id;
               const showAvatar =
                 index === 0 ||
                 messages[index - 1].sender_id !== message.sender_id;
@@ -420,18 +385,12 @@ const ChatDialog = ({
                     alignItems: "flex-end",
                   }}
                 >
-                  {/* Показываем аватар только для сообщений собеседника */}
                   {!isOwn && showAvatar && (
                     <Avatar
-                      src={getAvatarUrl(
-                        message.sender?.avatar || friend.avatar
-                      )}
+                      src={getAvatarUrl(friend.avatar)}
                       sx={{ width: 32, height: 32, mr: 1 }}
                     >
                       {(
-                        message.sender?.firstName ||
-                        message.sender?.username ||
-                        message.sender?.name ||
                         friend.firstName ||
                         friend.username ||
                         friend.name ||
@@ -439,7 +398,6 @@ const ChatDialog = ({
                       ).charAt(0)}
                     </Avatar>
                   )}
-                  {/* Не показываем аватар для своих сообщений вообще */}
                   {!isOwn && !showAvatar && <Box sx={{ width: 32, mr: 1 }} />}
 
                   <Paper
