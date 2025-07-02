@@ -101,7 +101,17 @@
     "topics": "Темы",
     "outOf": "из",
     "noSkillsYet": "У вас пока нет навыков",
-    "startCreating": "Начните создавать навыки для отслеживания своего прогресса"
+    "startCreating": "Начните создавать навыки для отслеживания своего прогресса",
+    "createTopic": "Добавить тему к навыку",
+    "topicName": "Название темы",
+    "topicDescription": "Описание темы",
+    "topicStatus": "Статус",
+    "topicProgress": "Прогресс, %",
+    "topicEstimatedHours": "Оценка часов",
+    "publicLabel": "Публичный навык",
+    "publicTooltip": "Позволить другим пользователям видеть этот навык в библиотеке",
+    "publicityUpdateSuccess": "Статус публичности обновлен",
+    "publicityUpdateError": "Ошибка при обновлении статуса публичности"
   },
   "achievements": {
     "title": "Достижения",
@@ -194,7 +204,8 @@
     "sort": "Сортировка",
     "language": "Язык",
     "create": "Создать",
-    "creating": "Создание..."
+    "creating": "Создание...",
+    "close": "Закрыть"
   },
   "form": {
     "edit": "Редактировать",
@@ -667,5 +678,29 @@
       "beginnerLevel": "Новичок",
       "daysStreak": "дней"
     }
+  },
+  "library": {
+    "title": "Библиотека навыков",
+    "subtitle": "Исследуйте публичные навыки других пользователей",
+    "searchPlaceholder": "Поиск навыков...",
+    "category": "Категория",
+    "allCategories": "Все категории",
+    "sortByDate": "По дате",
+    "sortByLikes": "По лайкам",
+    "sortByDislikes": "По дизлайкам",
+    "sortByComments": "По комментариям",
+    "resultsCount": "Найдено: {{count}} навыков",
+    "noSkillsFound": "Навыки не найдены",
+    "errorLoading": "Ошибка при загрузке навыков",
+    "topicsCompleted": "тем завершено",
+    "topics": "Темы",
+    "comments": "Комментарии",
+    "addComment": "Добавить комментарий...",
+    "noComments": "Пока нет комментариев",
+    "copySkill": "Скопировать навык",
+    "skillCopied": "Навык '{{name}}' успешно скопирован!",
+    "copyError": "Ошибка при копировании навыка",
+    "cannotCopyOwnSkill": "Нельзя копировать свой собственный навык",
+    "skillAlreadyExists": "У вас уже есть копия этого навыка"
   }
 }

@@ -4,6 +4,7 @@ import LandingPage from "./pages/LandingPage";
 import ProfilePage from "./pages/ProfilePageOld";
 import ProfilePageModular from "./pages/ProfilePageModular";
 import DashboardPage from "./pages/DashboardPage";
+import LibraryPage from "./pages/LibraryPage";
 import { useLastVisit } from "./hooks/useLastVisit";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -53,6 +54,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ProfilePageModular />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/library"
+            element={
+              <ProtectedRoute>
+                <LibraryPage />
               </ProtectedRoute>
             }
           />

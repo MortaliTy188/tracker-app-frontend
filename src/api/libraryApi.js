@@ -152,10 +152,30 @@ export const updateSkillPublicity = async (skillId, isPublic) => {
  */
 export const getSkillCategories = async () => {
   try {
-    const response = await apiClient.get("/api/skill-categories");
+    const response = await apiClient.get("/api/categories");
     return response.data;
   } catch (error) {
     console.error("Error fetching skill categories:", error);
+    throw error;
+  }
+};
+
+/**
+ * Скопировать навык из библиотеки себе
+ * @param {number} skillId - ID навыка для копирования
+ * @returns {Promise<Object>} Результат копирования навыка
+ */
+export const copySkillFromLibrary = async (skillId) => {
+  try {
+    const response = await apiClient.post(
+      `/api/library/skills/${skillId}/copy`,
+      {} // Пустое тело запроса для правильного Content-Type
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error copying skill from library:", error);
+    console.error("Error response:", error.response?.data);
+    console.error("Error status:", error.response?.status);
     throw error;
   }
 };

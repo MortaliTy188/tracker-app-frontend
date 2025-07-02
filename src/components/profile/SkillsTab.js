@@ -21,7 +21,11 @@ import {
   DialogActions,
   TextField,
   MenuItem,
+  Switch,
+  FormControlLabel,
+  Tooltip,
 } from "@mui/material";
+import { updateSkillPublicity } from "../../api/libraryApi";
 
 const API_BASE_URL = "http://localhost:3000/api";
 
@@ -57,6 +61,7 @@ export default function SkillsTab({
   const [topicFormError, setTopicFormError] = useState("");
   const [topicCreating, setTopicCreating] = useState(false);
   const [statuses, setStatuses] = useState([]);
+  const [updatingPublicity, setUpdatingPublicity] = useState({});
 
   useEffect(() => {
     // Fetch categories on mount
@@ -209,6 +214,25 @@ export default function SkillsTab({
   // Вспомогательная функция получения токена (локально, как в других местах)
   const getToken = () => {
     return localStorage.getItem("token") || sessionStorage.getItem("token");
+  };
+
+  // Обработчик переключения публичности навыка
+  const handlePublicityToggle = async (skillId, isPublic) => {
+    setUpdatingPublicity((prev) => ({ ...prev, [skillId]: true }));
+
+    try {
+      const response = await updateSkillPublicity(skillId, isPublic);
+      if (response.success) {
+        // Обновляем локальное состояние навыка
+        // В реальном приложении лучше обновить состояние через пропсы
+        window.location.reload(); // Временное решение для демонстрации
+      }
+    } catch (error) {
+      console.error("Error updating skill publicity:", error);
+      // Показать ошибку пользователю
+    } finally {
+      setUpdatingPublicity((prev) => ({ ...prev, [skillId]: false }));
+    }
   };
 
   if (skillsLoading) {
@@ -502,6 +526,33 @@ export default function SkillsTab({
                       {skill.description}
                     </Typography>
                   )}
+
+                  {/* Publicity Toggle */}
+                  <Box sx={{ mb: 2 }}>
+                    <Tooltip title={t("skills.publicTooltip")}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={skill.is_public || false}
+                            onChange={(e) =>
+                              handlePublicityToggle(skill.id, e.target.checked)
+                            }
+                            disabled={updatingPublicity[skill.id] || false}
+                            size="small"
+                            onClick={(e) => e.stopPropagation()} // Предотвращаем открытие модального окна
+                          />
+                        }
+                        label={t("skills.publicLabel")}
+                        sx={{
+                          "& .MuiFormControlLabel-label": {
+                            fontSize: "0.875rem",
+                            color: "text.secondary",
+                          },
+                        }}
+                        onClick={(e) => e.stopPropagation()} // Предотвращаем открытие модального окна
+                      />
+                    </Tooltip>
+                  </Box>
 
                   {/* Skill Progress */}
                   <Box sx={{ mb: 2 }}>

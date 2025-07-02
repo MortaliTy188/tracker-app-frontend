@@ -206,7 +206,7 @@ export default function Navbar() {
                     {t("navbar.dashboard")}
                   </Button>
                   <Button
-                    href="/profile"
+                    href="/library"
                     startIcon={<LibraryBooks />}
                     sx={{
                       color: "text.primary",

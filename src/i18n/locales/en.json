@@ -102,7 +102,17 @@
     "topics": "Topics",
     "outOf": "of",
     "noSkillsYet": "You don't have any skills yet",
-    "startCreating": "Start creating skills to track your progress"
+    "startCreating": "Start creating skills to track your progress!",
+    "createTopic": "Add topic to skill",
+    "topicName": "Topic name",
+    "topicDescription": "Topic description",
+    "topicStatus": "Status",
+    "topicProgress": "Progress, %",
+    "topicEstimatedHours": "Estimated hours",
+    "publicLabel": "Public skill",
+    "publicTooltip": "Allow other users to see this skill in the library",
+    "publicityUpdateSuccess": "Publicity status updated",
+    "publicityUpdateError": "Error updating publicity status"
   },
   "achievements": {
     "title": "Achievements",
@@ -194,7 +204,8 @@
     "sort": "Sort",
     "language": "Language",
     "create": "Create",
-    "creating": "Creating..."
+    "creating": "Creating...",
+    "close": "Close"
   },
   "form": {
     "edit": "Edit",
@@ -657,6 +668,30 @@
       "beginnerLevel": "Beginner",
       "daysStreak": "days"
     }
+  },
+  "library": {
+    "title": "Skills Library",
+    "subtitle": "Explore public skills from other users",
+    "searchPlaceholder": "Search skills...",
+    "category": "Category",
+    "allCategories": "All categories",
+    "sortByDate": "By date",
+    "sortByLikes": "By likes",
+    "sortByDislikes": "By dislikes",
+    "sortByComments": "By comments",
+    "resultsCount": "Found: {{count}} skills",
+    "noSkillsFound": "No skills found",
+    "errorLoading": "Error loading skills",
+    "topicsCompleted": "topics completed",
+    "topics": "Topics",
+    "comments": "Comments",
+    "addComment": "Add comment...",
+    "noComments": "No comments yet",
+    "copySkill": "Copy skill",
+    "skillCopied": "Skill \"{{name}}\" successfully copied to your profile!",
+    "copyError": "Error copying skill",
+    "cannotCopyOwnSkill": "Cannot copy your own skill",
+    "skillAlreadyExists": "You already have a copy of this skill"
   },
   "skill": {
     "categoriesTitle": "Skill Categories"
