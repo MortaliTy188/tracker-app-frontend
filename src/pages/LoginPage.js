@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth, useSnackbar } from "../hooks";
+import { useTranslation } from "react-i18next";
 import {
   TextField,
   Button,
@@ -15,6 +16,7 @@ import {
 } from "@mui/material";
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState(""); // состояние для email
   const [password, setPassword] = useState(""); // состояние для пароля
   const [name, setName] = useState(""); // состояние для имени (только для регистрации)
@@ -101,7 +103,7 @@ export default function LoginPage() {
       }}
     >
       <Typography variant="h1" sx={{ fontSize: 60 }}>
-        Tracker App
+        {t("auth.title")}
       </Typography>
 
       <Box>
@@ -113,12 +115,10 @@ export default function LoginPage() {
             },
           }}
         >
-          {isRegister ? `Glad to see you` : "Holla, Welcome Back"}
+          {isRegister ? t("auth.register.title") : t("auth.login.title")}
         </Typography>
         <Typography variant="caption" sx={{ fontSize: 20 }}>
-          {isRegister
-            ? "Please register to continue"
-            : "Hey, welcome back to your special place"}
+          {isRegister ? t("auth.register.subtitle") : t("auth.login.subtitle")}
         </Typography>
       </Box>
 
@@ -134,7 +134,7 @@ export default function LoginPage() {
       >
         {isRegister && (
           <TextField
-            label="Name"
+            label={t("auth.register.nameLabel")}
             variant="outlined"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -142,14 +142,14 @@ export default function LoginPage() {
           ></TextField>
         )}
         <TextField
-          label="Email"
+          label={t("auth.login.emailLabel")}
           variant="outlined"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           fullWidth
         />
         <TextField
-          label="Password"
+          label={t("auth.login.passwordLabel")}
           type="password"
           variant="outlined"
           value={password}
@@ -168,10 +168,14 @@ export default function LoginPage() {
             control={<Checkbox />}
             value={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
-            label={<Typography variant="body2">Remember me</Typography>}
+            label={
+              <Typography variant="body2">
+                {t("auth.login.rememberMe")}
+              </Typography>
+            }
           />
           <Link href="/forgot-password" variant="body2">
-            Forgot Password?
+            {t("auth.login.forgotPassword")}
           </Link>
         </Box>
         <Button
@@ -186,21 +190,27 @@ export default function LoginPage() {
             },
           }}
         >
-          {isLoading ? "Loading..." : isRegister ? "Register" : "Login"}
+          {isLoading
+            ? t("auth.login.loading")
+            : isRegister
+            ? t("auth.register.registerButton")
+            : t("auth.login.loginButton")}
         </Button>
       </Box>
       <Box>
         <Typography variant="body2" sx={{ textAlign: "center" }}>
           <>
             {isRegister
-              ? "Already have an account? "
-              : "Don't have an account? "}
+              ? t("auth.register.haveAccount")
+              : t("auth.login.noAccount")}
             <Link
               href="#"
               onClick={() => setIsRegister(!isRegister)}
               sx={{ textDecoration: "none", color: "#1976d2" }}
             >
-              {isRegister ? "Login" : "Register"}
+              {isRegister
+                ? t("auth.register.loginLink")
+                : t("auth.login.registerLink")}
             </Link>
           </>
         </Typography>

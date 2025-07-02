@@ -693,6 +693,32 @@
     "cannotCopyOwnSkill": "Cannot copy your own skill",
     "skillAlreadyExists": "You already have a copy of this skill"
   },
+  "auth": {
+    "title": "Tracker App",
+    "login": {
+      "title": "Holla, Welcome Back",
+      "subtitle": "Hey, welcome back to your special place",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot Password?",
+      "loginButton": "Login",
+      "loading": "Loading...",
+      "noAccount": "Don't have an account? ",
+      "registerLink": "Register"
+    },
+    "register": {
+      "title": "Glad to see you",
+      "subtitle": "Please register to continue",
+      "nameLabel": "Name",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "registerButton": "Register",
+      "loading": "Loading...",
+      "haveAccount": "Already have an account? ",
+      "loginLink": "Login"
+    }
+  },
   "skill": {
     "categoriesTitle": "Skill Categories"
   }

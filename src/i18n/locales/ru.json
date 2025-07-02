@@ -186,7 +186,31 @@
   },
   "auth": {
     "loginRequired": "Для доступа к панели управления необходимо авторизоваться",
-    "loginButton": "Войти в систему"
+    "loginButton": "Войти в систему",
+    "title": "Tracker App",
+    "login": {
+      "title": "Добро пожаловать!",
+      "subtitle": "Рады видеть вас снова в вашем особенном месте",
+      "emailLabel": "Email",
+      "passwordLabel": "Пароль",
+      "rememberMe": "Запомнить меня",
+      "forgotPassword": "Забыли пароль?",
+      "loginButton": "Войти",
+      "loading": "Загрузка...",
+      "noAccount": "Нет аккаунта? ",
+      "registerLink": "Зарегистрироваться"
+    },
+    "register": {
+      "title": "Рады вас видеть",
+      "subtitle": "Пожалуйста, зарегистрируйтесь, чтобы продолжить",
+      "nameLabel": "Имя",
+      "emailLabel": "Email",
+      "passwordLabel": "Пароль",
+      "registerButton": "Зарегистрироваться",
+      "loading": "Загрузка...",
+      "haveAccount": "Уже есть аккаунт? ",
+      "loginLink": "Войти"
+    }
   },
   "common": {
     "loading": "Загрузка...",

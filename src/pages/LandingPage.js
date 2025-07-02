@@ -188,6 +188,7 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <Box
+        id="home"
         sx={{
           background: `linear-gradient(135deg, ${alpha(
             theme.palette.primary.main,
@@ -330,7 +331,7 @@ export default function LandingPage() {
       </Box>
 
       {/* Features Section */}
-      <Container maxWidth="lg" sx={{ py: 8 }}>
+      <Container maxWidth="lg" sx={{ py: 8 }} id="features">
         <FadeInOnScroll direction="up" delay={100}>
           <Typography
             variant="h3"
@@ -620,7 +621,7 @@ export default function LandingPage() {
       </Box>
 
       {/* FAQ Section */}
-      <Container maxWidth="md" sx={{ py: 8 }}>
+      <Container maxWidth="md" sx={{ py: 8 }} id="faq">
         <FadeInOnScroll direction="up" delay={100}>
           <Typography
             variant="h3"

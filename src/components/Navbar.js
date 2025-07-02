@@ -80,6 +80,35 @@ export default function Navbar() {
 
   const handleLogin = () => {
     window.location.href = "/login";
+  };
+
+  // Функция для плавной прокрутки к секции
+  const handleSmoothScroll = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
+  // Функция для прокрутки к началу страницы
+  const handleScrollToTop = () => {
+    // Пытаемся найти hero секцию с id="home"
+    const homeElement = document.getElementById("home");
+    if (homeElement) {
+      homeElement.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    } else {
+      // Если секция не найдена, прокручиваем к самому верху
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
   }; // Загружаем данные пользователя при монтировании компонента
   useEffect(() => {
     const loadUserData = async () => {
@@ -223,7 +252,7 @@ export default function Navbar() {
                 // Навигация для неавторизованных пользователей
                 <>
                   <Button
-                    href="/"
+                    onClick={handleScrollToTop}
                     startIcon={<Home />}
                     sx={{
                       color: "text.primary",
@@ -236,7 +265,7 @@ export default function Navbar() {
                     {t("navbar.home")}
                   </Button>
                   <Button
-                    href="#features"
+                    onClick={() => handleSmoothScroll("features")}
                     startIcon={<Info />}
                     sx={{
                       color: "text.primary",
@@ -249,7 +278,7 @@ export default function Navbar() {
                     {t("navbar.features")}
                   </Button>
                   <Button
-                    href="#faq"
+                    onClick={() => handleSmoothScroll("faq")}
                     startIcon={<QuestionAnswer />}
                     sx={{
                       color: "text.primary",
