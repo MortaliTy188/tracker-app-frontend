@@ -7,13 +7,22 @@ import DashboardPage from "./pages/DashboardPage";
 import LibraryPage from "./pages/LibraryPage";
 import { useLastVisit } from "./hooks/useLastVisit";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AchievementNotification from "./components/AchievementNotification";
+import {
+  AchievementNotificationProvider,
+  useAchievementNotifications,
+} from "./contexts/AchievementNotificationContext";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 
-function App() {
+function AppContent() {
   useLastVisit();
   const { i18n } = useTranslation();
+
+  // Хук для управления уведомлениями о достижениях
+  const { currentNotification, isNotificationOpen, closeNotification } =
+    useAchievementNotifications();
 
   // Проверяем и восстанавливаем сохраненный язык при запуске приложения
   useEffect(() => {
@@ -37,7 +46,6 @@ function App() {
 
   return (
     <div className="App">
-      {" "}
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -76,7 +84,22 @@ function App() {
           <Route path="/" element={<LandingPage />} />
         </Routes>
       </BrowserRouter>
+
+      {/* Глобальный компонент уведомлений о достижениях */}
+      <AchievementNotification
+        open={isNotificationOpen}
+        onClose={closeNotification}
+        achievement={currentNotification?.achievement}
+      />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AchievementNotificationProvider>
+      <AppContent />
+    </AchievementNotificationProvider>
   );
 }
 

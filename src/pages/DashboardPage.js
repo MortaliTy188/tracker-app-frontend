@@ -11,6 +11,7 @@ import {
   useNotes,
   useFriendship,
 } from "../hooks";
+import { useAchievementNotifications } from "../contexts/AchievementNotificationContext";
 import {
   Box,
   Container,
@@ -100,6 +101,9 @@ export default function DashboardPage() {
   const { t, i18n } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { showError, showSuccess } = useSnackbar();
+
+  // Хук для тестирования уведомлений о достижениях
+  const { sendTestNotification } = useAchievementNotifications();
 
   // States for loading
   const [isLoadingData, setIsLoadingData] = useState(true);
@@ -744,6 +748,48 @@ export default function DashboardPage() {
             <Box
               sx={{ position: "absolute", right: 0, display: "flex", gap: 1 }}
             >
+              {/* Тестовая кнопка для уведомлений о достижениях */}
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  const testAchievements = [
+                    {
+                      name: "Первый навык",
+                      description: "Создайте свой первый навык",
+                      icon: "celebration",
+                      points: 50,
+                      rarity: "common",
+                    },
+                    {
+                      name: "Мастер заметок",
+                      description: "Создайте 10 заметок",
+                      icon: "star",
+                      points: 100,
+                      rarity: "rare",
+                    },
+                    {
+                      name: "Легенда обучения",
+                      description: "Завершите 50 тем",
+                      icon: "celebration",
+                      points: 500,
+                      rarity: "legendary",
+                    },
+                  ];
+                  const randomAchievement =
+                    testAchievements[
+                      Math.floor(Math.random() * testAchievements.length)
+                    ];
+                  sendTestNotification(randomAchievement);
+                }}
+                sx={{
+                  opacity: 0.7,
+                  fontSize: "0.7rem",
+                  "&:hover": { opacity: 1 },
+                }}
+              >
+                🎉 Тест
+              </Button>
               <LanguageSwitcher variant="select" />
               <IconButton
                 onClick={handleRefresh}

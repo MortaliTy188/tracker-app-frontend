@@ -177,6 +177,16 @@ export const useSocket = () => {
     [socket]
   );
 
+  // Автоматическое подключение при монтировании
+  useEffect(() => {
+    const token =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (token && !socketRef.current?.connected) {
+      console.log("🔌 Автоматическое подключение к socket...");
+      connect();
+    }
+  }, [connect]);
+
   // Очистка при размонтировании
   useEffect(() => {
     return () => {
