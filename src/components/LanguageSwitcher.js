@@ -18,6 +18,20 @@ const LanguageSwitcher = ({ variant = "select" }) => {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
 
+  // Инициализация языка при монтировании компонента
+  React.useEffect(() => {
+    const savedLanguage =
+      localStorage.getItem("i18nextLng") ||
+      sessionStorage.getItem("i18nextLng");
+    console.log("LanguageSwitcher mounted, saved language:", savedLanguage);
+    console.log("Current i18n language:", i18n.language);
+
+    if (savedLanguage && savedLanguage !== i18n.language) {
+      console.log("Setting language to saved:", savedLanguage);
+      i18n.changeLanguage(savedLanguage);
+    }
+  }, [i18n]);
+
   const languages = [
     { code: "ru", name: "Русский", flag: "🇷🇺" },
     { code: "en", name: "English", flag: "🇺🇸" },
@@ -27,9 +41,24 @@ const LanguageSwitcher = ({ variant = "select" }) => {
     languages.find((lang) => lang.code === i18n.language) || languages[0];
 
   const handleLanguageChange = (langCode) => {
+    console.log("Changing language to:", langCode);
+
+    // Меняем язык в i18n
     i18n.changeLanguage(langCode);
+
+    // Сохраняем в обоих местах для надежности
     localStorage.setItem("i18nextLng", langCode);
+    sessionStorage.setItem("i18nextLng", langCode);
+
+    // Закрываем меню
     setAnchorEl(null);
+
+    console.log("Language changed to:", langCode);
+    console.log("localStorage i18nextLng:", localStorage.getItem("i18nextLng"));
+    console.log(
+      "sessionStorage i18nextLng:",
+      sessionStorage.getItem("i18nextLng")
+    );
   };
 
   const handleClick = (event) => {

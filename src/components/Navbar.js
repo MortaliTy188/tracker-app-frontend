@@ -65,6 +65,11 @@ export default function Navbar() {
   };
   const handleLibrary = () => {
     handleClose();
+    window.location.href = "/library"; // Будущая страница библиотеки
+  };
+
+  const handleProfile = () => {
+    handleClose();
     window.location.href = "/profile";
   };
 
@@ -345,7 +350,7 @@ export default function Navbar() {
                       </ListItemIcon>
                       <ListItemText>{t("navbar.library")}</ListItemText>
                     </MenuItem>
-                    <MenuItem onClick={handleLibrary}>
+                    <MenuItem onClick={handleProfile}>
                       <ListItemIcon>
                         <Person fontSize="small" />
                       </ListItemIcon>

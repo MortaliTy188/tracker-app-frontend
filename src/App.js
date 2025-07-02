@@ -7,9 +7,32 @@ import DashboardPage from "./pages/DashboardPage";
 import { useLastVisit } from "./hooks/useLastVisit";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useEffect } from "react";
 
 function App() {
   useLastVisit();
+  const { i18n } = useTranslation();
+
+  // Проверяем и восстанавливаем сохраненный язык при запуске приложения
+  useEffect(() => {
+    const savedLanguage =
+      localStorage.getItem("i18nextLng") ||
+      sessionStorage.getItem("i18nextLng");
+    console.log("App mounted, saved language:", savedLanguage);
+    console.log("Current i18n language:", i18n.language);
+
+    if (savedLanguage && savedLanguage !== i18n.language) {
+      console.log("Restoring language to:", savedLanguage);
+      i18n.changeLanguage(savedLanguage);
+    } else if (!savedLanguage) {
+      // Если нет сохраненного языка, устанавливаем русский по умолчанию
+      console.log("No saved language, setting default to Russian");
+      i18n.changeLanguage("ru");
+      localStorage.setItem("i18nextLng", "ru");
+      sessionStorage.setItem("i18nextLng", "ru");
+    }
+  }, [i18n]);
 
   return (
     <div className="App">
